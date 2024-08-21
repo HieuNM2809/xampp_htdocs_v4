@@ -1,0 +1,16 @@
+{
+  "name": "your-project",
+  "version": "1.0.0",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "module-alias": "^2.2.3"
+  },
+  "_moduleAliases": {
+    "@controllers": "./src/controllers",
+    "@models": "./src/models",
+    "@utils": "./src/utils"
+  }
+}
