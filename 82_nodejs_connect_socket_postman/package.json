@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "engine.io": "^6.6.0",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "socket.io": "^4.7.5"
+  }
+}
