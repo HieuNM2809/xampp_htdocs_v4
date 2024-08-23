@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "express-rate-limit": "^7.4.0",
+    "ioredis": "^5.4.1",
+    "rate-limit-redis": "^4.2.0"
+  }
+}
