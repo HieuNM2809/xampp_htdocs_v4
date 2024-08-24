@@ -31,9 +31,9 @@ Bạn có thể thêm mục `"_moduleAliases"` trong `package.json` như sau:
 {
   "name": "your-project",
   "version": "1.0.0",
-  "main": "src/index.js",
+  "main": "src/app.js",
   "scripts": {
-    "start": "node src/index.js"
+    "start": "node src/app.js"
   },
   "_moduleAliases": {
     "@controllers": "src/controllers",
@@ -51,7 +51,7 @@ Bạn có thể thêm mục `"_moduleAliases"` trong `package.json` như sau:
 Trong mã nguồn, thay vì sử dụng đường dẫn tương đối, bạn có thể sử dụng bí danh đã cấu hình:
 
 ```javascript
-// src/index.js
+// src/app.js
 require('module-alias/register'); // Cần phải gọi để kích hoạt module-alias
 
 const userController = require('@controllers/userController');
