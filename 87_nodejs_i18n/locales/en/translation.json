@@ -1,0 +1,7 @@
+{
+  "welcome": "Welcome to our application!",
+  "greeting": "Hello, {{name}}!",
+  "date": "Today is {{date, date}}",
+  "item": "You have {{count}} item",
+  "item_plural": "You have {{count}} items"
+}

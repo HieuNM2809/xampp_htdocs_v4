@@ -1,0 +1,7 @@
+{
+  "welcome": "Chào mừng bạn đến với ứng dụng của chúng tôi!",
+  "greeting": "Xin chào, {{name}}!",
+  "date": "Hôm nay là {{date, date}}",
+  "item": "Bạn có {{count}} mục",
+  "item_plural": "Bạn có {{count}} mục"
+}
