@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "arena": "^0.0.2",
+    "bee-queue": "^1.7.1",
+    "bull-arena": "^4.4.2",
+    "express": "^4.19.2",
+    "ioredis": "^5.4.1"
+  }
+}
