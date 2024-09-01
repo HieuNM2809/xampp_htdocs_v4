@@ -1,0 +1,22 @@
+{
+  "apps": [
+    {
+      "name": "server",
+      "script": "./server.js",
+      "watch": true,
+      "ignore_watch": ["node_modules", "public", "logs", ".git", ".idea"],
+      "exec_mode": "cluster",
+      "instances": 1,
+      "node_args": "--trace-warnings --max_old_space_size=1024"
+    },
+    {
+      "name": "workers",
+      "script": "./workers/exampleWorker.js",
+      "watch": true,
+      "ignore_watch": ["node_modules", "public", "logs", ".git", ".idea"],
+      "exec_mode": "cluster",
+      "instances": 1,
+      "node_args": "--trace-warnings --max_old_space_size=1024"
+    }
+  ]
+}

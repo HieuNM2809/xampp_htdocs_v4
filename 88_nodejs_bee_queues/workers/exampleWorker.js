@@ -5,7 +5,7 @@ const exampleJob = require('../jobs/exampleJob');
 const exampleQueue = new Queue('example', {
     redis: redisConfig,
     isWorker: true,  // Worker xử lý công việc
-    removeOnSuccess: true,  // Xóa job khỏi hàng đợi khi thành công
+    removeOnSuccess: false,  // Xóa job khỏi hàng đợi khi thành công
 });
 
 exampleQueue.process(2, async (job, done) => {
