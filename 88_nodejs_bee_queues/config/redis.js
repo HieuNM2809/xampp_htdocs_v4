@@ -1,8 +1,8 @@
 const Redis = require('ioredis');
 
 const redisConfig = {
-    host: 'localhost',
-    port: 6380,
+    host: 'redis',
+    port: 6379,
     // password: 'your_redis_password',  // nếu cần
     // db: 0,  // chọn database Redis phù hợp
 };

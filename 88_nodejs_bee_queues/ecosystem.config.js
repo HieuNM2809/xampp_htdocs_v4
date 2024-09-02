@@ -6,7 +6,6 @@ module.exports = {
             instances: 1,
             exec_mode: 'cluster',
             watch: true,
-            watch_delay: 1000, // Thay đổi này có thể giúp PM2 phát hiện thay đổi nhanh hơn
             ignore_watch: ['node_modules'] // Đảm bảo không theo dõi thư mục không cần thiết
         },
         {

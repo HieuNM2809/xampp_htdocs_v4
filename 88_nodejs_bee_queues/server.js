@@ -9,7 +9,7 @@ app.use(express.json());
 app.use('/', arena);
 
 app.use('/', (req, res) => {
-    res.send('hello 4');
+    res.send('hello 6');
 });
 
 app.post('/add-job', async (req, res) => {

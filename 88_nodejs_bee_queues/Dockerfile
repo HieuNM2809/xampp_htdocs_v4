@@ -14,8 +14,16 @@ COPY . .
 # Cài đặt pm2 toàn cục
 RUN npm install pm2 -g
 
+# Cài đặt nodemon toàn cục
+RUN npm install -g nodemon
+
 # Expose cổng mà ứng dụng sẽ chạy
 EXPOSE 3000
 
 # Thiết lập command mặc định cho container
 CMD ["pm2-runtime", "start", "pm2-app.json"]
+
+# Use nodemon for development
+# CMD ["nodemon", "--watch", ".", "server.js"]
+
+
