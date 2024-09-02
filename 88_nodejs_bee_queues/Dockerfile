@@ -1,6 +1,9 @@
 # Sử dụng image Node.js chính thức
 FROM node:latest
 
+# Thêm các công cụ editor (vim, nano)
+RUN apt update && apt install -y nano vim
+
 # Thiết lập thư mục làm việc
 WORKDIR /usr/src/app
 
