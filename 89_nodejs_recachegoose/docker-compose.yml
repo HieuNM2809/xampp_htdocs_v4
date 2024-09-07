@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    ports:
+      - "27018:27017" # Mở cổng 27017 cho MongoDB
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: 123456
+    volumes:
+      - mongodb_data:/data/db # Volume để lưu dữ liệu MongoDB
+    networks:
+      - backend
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6380:6379" # Mở cổng 6379 cho Redis
+    restart: always
+    command: redis-server --save 20 1 --loglevel warning
+    volumes:
+      - redis_data:/data
+    networks:
+      - backend
+
+volumes:
+  mongodb_data:
+  redis_data:
+
+networks:
+  backend:
+
+
+
+#https://chatgpt.com/share/2dcad9f3-1723-4b59-bf17-7b7eca697fb6
