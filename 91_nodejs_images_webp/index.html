@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload hình ảnh</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 50px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        input[type="file"] {
+            margin-bottom: 20px;
+        }
+        button {
+            display: block;
+            margin-top: 10px;
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>Tải lên hình ảnh</h2>
+    <form id="uploadForm">
+        <input type="file" id="fileInput" name="images" multiple>
+        <button type="submit">Tải lên</button>
+    </form>
+    <div id="message"></div>
+</div>
+
+<script>
+    document.getElementById('uploadForm').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const files = document.getElementById('fileInput').files;
+        if (files.length === 0) {
+            alert('Vui lòng chọn ít nhất một hình ảnh');
+            return;
+        }
+
+        const formData = new FormData();
+        for (let i = 0; i < files.length; i++) {
+            formData.append('images', files[i]);
+        }
+
+        try {
+            const response = await fetch('http://localhost:3000/upload', {
+                method: 'POST',
+                body: formData,
+            });
+
+            const result = await response.text();
+            document.getElementById('message').innerText = result;
+        } catch (error) {
+            console.error('Lỗi khi upload hình ảnh:', error);
+            document.getElementById('message').innerText = 'Đã xảy ra lỗi khi tải lên hình ảnh';
+        }
+    });
+</script>
+</body>
+</html>

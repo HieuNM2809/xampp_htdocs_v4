@@ -1,0 +1,8 @@
+/.idea
+/optimized-images
+/uploads
+/87_nodejs_i18n/node_modules
+/87_nodejs_i18n/.idea
+/88_nodejs_bee_queues/node_modules
+/*/node_modules
+/90_nodejs_multer/uploads/images
