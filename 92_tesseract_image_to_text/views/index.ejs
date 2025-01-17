@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tesseract OCR Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+        }
+        form {
+            margin: 20px 0;
+            text-align: center;
+        }
+        textarea {
+            width: 100%;
+            height: 150px;
+            margin-top: 20px;
+        }
+        .error {
+            color: red;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Tesseract OCR Demo</h1>
+    <form action="/upload" method="POST" enctype="multipart/form-data">
+        <label for="image">Chọn hình ảnh:</label>
+        <input type="file" name="image" id="image" required>
+        <button type="submit">Tải lên và OCR</button>
+    </form>
+
+    <% if (text) { %>
+        <h3>Kết quả OCR:</h3>
+        <textarea readonly><%= text %></textarea>
+    <% } %>
+
+    <% if (error) { %>
+        <p class="error"><%= error %></p>
+    <% } %>
+</div>
+</body>
+</html>
