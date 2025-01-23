@@ -65,11 +65,12 @@ Giả sử bạn có một bản backup của `example_db` được tạo 1 ngà
 Chẳng hạn, chạy:
 
 ```bash
-mysqlbinlog --stop-datetime="2025-01-22 12:00:00" \
+C1: mysqlbinlog --stop-datetime="2025-01-22 12:00:00" \
   /var/log/mysql/mysql-bin.000001 | mysql -u root -p
 
+C2: mysqlbinlog --stop-datetime="2025-01-23 13:20:00" /var/log/mysql/mysql-bin.000001 | mysql -u root -p --force
 ```
-
+(`--force` xoá hết và tạo lại).
 (`--stop-datetime` giúp dừng replay binlog trước thời điểm bạn gây ra xóa nhầm).
 
 Nhờ đó, bạn khôi phục được dữ liệu mà không mất những thay đổi quan trọng.
