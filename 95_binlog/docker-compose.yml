@@ -1,0 +1,27 @@
+version: '3.4'
+
+services:
+  db:
+    image: mariadb:10.2.9
+    container_name: test-db
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: root
+      MYSQL_USER: root
+      MYSQL_PASSWORD: root@123
+      MYSQL_ROOT_PASSWORD: root@123
+      MYSQL_ROOT_HOST: '%'
+      TZ: Asia/Ho_Chi_Minh
+    volumes:
+      - mysql_data:/var/lib/mysql/
+      # - .docker/mariadb/my.cnf:/etc/my.cnf
+    networks:
+      - default
+volumes:
+  mysql_data:
+    external: false
+
+networks:
+  default:
+    driver: bridge
