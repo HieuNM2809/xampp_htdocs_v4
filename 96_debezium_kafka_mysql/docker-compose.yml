@@ -27,15 +27,17 @@ services:
     links:
       - kafka
   mysql:
-    image: mysql:latest
+    image: mysql:8.0
     container_name: demo_mysql_container
     environment:
       MYSQL_ROOT_PASSWORD: root1234
-      MYSQL_DATABASE: shopdevgo
-      MYSQL_USER: crm_user
+      MYSQL_DATABASE: inventory
+      # MYSQL_USER: "root"
       MYSQL_PASSWORD: root1234
     ports:
       - "30306:3306"
+    command:
+      --log-bin=mysql-bin --binlog-format=ROW --server-id=1 --gtid-mode=ON --enforce-gtid-consistency=ON
   redis:
     image: redis:7.0
     container_name: demo_redis_container

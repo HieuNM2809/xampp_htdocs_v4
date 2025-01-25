@@ -1,16 +1,16 @@
 {
-    "name": "shopdevgo-connector",
+    "name": "inventory-connector",
     "config": {
         "connector.class": "io.debezium.connector.mysql.MySqlConnector",
         "tasks.max": "1",
         "database.hostname": "mysql",
         "database.port": "3306",
-        "database.user": "crm_user",
+        "database.user": "root",
         "database.password": "root1234",
-        "database.server.id": "184054",
+        "database.server.id": "1",
         "topic.prefix": "dbserver1",
-        "database.include.list": "shopdevgo",
+        "database.include.list": "inventory",
         "schema.history.internal.kafka.bootstrap.servers": "kafka:9092",
-        "schema.history.internal.kafka.topic": "schema-changes.shopdevgo"
+        "schema.history.internal.kafka.topic": "schema-changes.inventory"
     }
 }
