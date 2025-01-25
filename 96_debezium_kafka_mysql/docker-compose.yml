@@ -26,6 +26,21 @@ services:
       - "9089:8080"
     links:
       - kafka
+  kafka-tools:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka_tools
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    depends_on:
+      - kafka
+      - zookeeper
+    links:
+      - kafka
+      - zookeeper
+    command: ["tail", "-f", "/dev/null"]
   mysql:
     image: mysql:8.0
     container_name: demo_mysql_container
