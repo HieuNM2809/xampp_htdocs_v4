@@ -1,0 +1,57 @@
+version: '3'
+services:
+  zookeeper:
+    image: quay.io/debezium/zookeeper:2.7
+    container_name: demo_zookeeper
+    ports:
+     - 2181:2181
+     - 2888:2888
+     - 3888:3888
+  kafka:
+    image: quay.io/debezium/kafka:2.7
+    container_name: demo_kafka
+    ports:
+     - 9092:9092
+    links:
+     - zookeeper
+    environment:
+     - ZOOKEEPER_CONNECT=zookeeper:2181
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: demo_kafka-ui
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: demo_kafka:9092
+    ports:
+      - "9089:8080"
+    links:
+      - kafka
+  mysql:
+    image: mysql:latest
+    container_name: demo_mysql_container
+    environment:
+      MYSQL_ROOT_PASSWORD: root1234
+      MYSQL_DATABASE: shopdevgo
+      MYSQL_USER: crm_user
+      MYSQL_PASSWORD: root1234
+    ports:
+      - "30306:3306"
+  redis:
+    image: redis:7.0
+    container_name: demo_redis_container
+    ports:
+      - "6379:6379"   
+  connect:
+    image: quay.io/debezium/connect:2.7
+    container_name: demo_connect
+    ports:
+     - 8083:8083
+    links:
+     - kafka
+     - mysql
+    environment:
+     - BOOTSTRAP_SERVERS=kafka:9092
+     - GROUP_ID=1
+     - CONFIG_STORAGE_TOPIC=my_connect_configs
+     - OFFSET_STORAGE_TOPIC=my_connect_offsets
+     - STATUS_STORAGE_TOPIC=my_connect_statuses
