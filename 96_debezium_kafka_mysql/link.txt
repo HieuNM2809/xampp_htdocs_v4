@@ -13,3 +13,8 @@ https://anonystick.com/blog-developer/huong-dan-dong-bo-du-lieu-mysql-to-kafka-s
 2. Connect
    - curl -i -X POST -H "Accept: application/json" -H "Content-Type:application/json" 127.0.0.1:8083/connectors/ -d @register-mysql.json
    - curl -i -X POST -H "Accept: application/json" -H "Content-Type:application/json" 127.0.0.1:8083/connectors/ -d @/mnt/d/HieuNM/xampp_htdocs_v4/96_debezium_kafka_mysql/register-mysql.json
+
+
+
+Ngoài ra còn có: Canal
+https://github.com/alibaba/canal
