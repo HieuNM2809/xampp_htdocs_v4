@@ -73,3 +73,68 @@ button {
     padding: 10px;
     display: none;
 }
+
+/* Markdown styling */
+.message h1, .message h2, .message h3 {
+    margin: 0.5em 0;
+    color: #fff;
+}
+
+.message p {
+    margin: 0.5em 0;
+    line-height: 1.5;
+}
+
+.message ul, .message ol {
+    padding-left: 1.5em;
+    margin: 0.5em 0;
+}
+
+.message li {
+    margin: 0.25em 0;
+}
+
+.message code {
+    background: rgba(110, 118, 129, 0.4);
+    padding: 0.2em 0.4em;
+    border-radius: 3px;
+    font-family: monospace;
+}
+
+.message pre {
+    background: #1e1e1e;
+    padding: 1em;
+    border-radius: 5px;
+    overflow-x: auto;
+    margin: 1em 0;
+}
+
+.message pre code {
+    background: none;
+    padding: 0;
+    font-size: 0.9em;
+}
+
+.message blockquote {
+    border-left: 3px solid #666;
+    margin: 0.5em 0;
+    padding-left: 1em;
+    color: #888;
+}
+
+.message strong {
+    color: #fff;
+}
+
+.message em {
+    color: #ccc;
+}
+
+.message a {
+    color: #58a6ff;
+    text-decoration: none;
+}
+
+.message a:hover {
+    text-decoration: underline;
+}

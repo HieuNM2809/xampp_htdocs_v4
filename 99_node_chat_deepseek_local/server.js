@@ -11,6 +11,11 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public')); // Phục vụ file tĩnh từ thư mục public
 
+const openai = new OpenAI({
+    baseURL: 'http://localhost:11434/v1',
+    apiKey: 'ollama'
+});
+
 // Route render giao diện
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
@@ -24,7 +29,7 @@ app.post('/chat', async (req, res) => {
                 { role: "system", content: "You are a helpful assistant." },
                 { role: "user", content: req.body.message }
             ],
-            model: "deepseek-chat",
+            model: "deepseek-r1:7b",
         });
 
         res.json({

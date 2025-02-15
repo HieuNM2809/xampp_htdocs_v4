@@ -6,7 +6,16 @@ document.addEventListener('DOMContentLoaded', () => {
     function addMessage(content, isUser = true) {
         const messageDiv = document.createElement('div');
         messageDiv.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
-        messageDiv.textContent = content;
+        
+        // Chuyển đổi Markdown sang HTML
+        const formattedContent = marked.parse(content);
+        messageDiv.innerHTML = formattedContent;
+        
+        // Highlight code blocks
+        messageDiv.querySelectorAll('code').forEach((block) => {
+            hljs.highlightElement(block);
+        });
+    
         chatContainer.appendChild(messageDiv);
         chatContainer.scrollTop = chatContainer.scrollHeight;
     }
