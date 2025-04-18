@@ -1,0 +1,19 @@
+{
+  "name": "102_nodejs_grpc",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start:server": "node server/index.js",
+    "start:client": "node client/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@grpc/grpc-js": "^1.9.14",
+    "@grpc/proto-loader": "^0.7.10",
+    "uuid": "^9.0.1"
+  }
+}

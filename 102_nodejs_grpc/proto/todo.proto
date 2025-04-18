@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package todo;
+
+service TodoService {
+  // Tạo một công việc mới
+  rpc CreateTodo (TodoItem) returns (TodoItem);
+  
+  // Lấy danh sách công việc
+  rpc GetTodos (Empty) returns (TodoList);
+  
+  // Lấy thông tin công việc theo ID
+  rpc GetTodo (TodoId) returns (TodoItem);
+  
+  // Cập nhật thông tin công việc
+  rpc UpdateTodo (TodoItem) returns (TodoItem);
+  
+  // Xóa công việc theo ID
+  rpc DeleteTodo (TodoId) returns (Empty);
+}
+
+// Định nghĩa cấu trúc cho một công việc
+message TodoItem {
+  string id = 1;
+  string title = 2;
+  string description = 3;
+  bool completed = 4;
+}
+
+// Định nghĩa ID của công việc
+message TodoId {
+  string id = 1;
+}
+
+// Danh sách công việc
+message TodoList {
+  repeated TodoItem items = 1;
+}
+
+// Message rỗng cho các request/response không cần tham số
+message Empty {} 
