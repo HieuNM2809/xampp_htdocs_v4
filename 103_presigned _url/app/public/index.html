@@ -1,0 +1,90 @@
+<!-- presigned-demo/app/public/index.html -->
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+	<meta charset="UTF-8">
+	<title>Presigned URL Demo</title>
+	<style>
+        body {
+            font-family: sans-serif;
+            margin: 2em;
+        }
+
+        input, button {
+            margin: .5em 0;
+        }
+
+        #log {
+            white-space: pre-wrap;
+            background: #f0f0f0;
+            padding: 1em;
+            height: 200px;
+            overflow: auto;
+        }
+	</style>
+</head>
+<body>
+<h1>Upload / Download với Presigned URL</h1>
+
+<!-- Chọn file để upload -->
+<input type="file" id="fileInput"/><br>
+<button id="uploadBtn">Upload lên MinIO</button>
+
+<hr>
+
+<!-- Nhập tên file để download -->
+<input type="text" id="downloadKey" placeholder="Tên file (ví dụ: example.txt)"/>
+<button id="downloadBtn">Tạo link Download</button>
+
+<hr>
+
+<h2>Log</h2>
+<div id="log"></div>
+
+<script>
+    const log = msg => {
+        document.getElementById('log').textContent += msg + '\\n';
+    };
+
+    // UPLOAD
+    document.getElementById('uploadBtn').onclick = async () => {
+        const fileInput = document.getElementById('fileInput');
+        if (!fileInput.files.length) return alert('Hãy chọn file trước.');
+        const file = fileInput.files[0];
+        // 1) Lấy presigned URL từ server
+        log(`👉 Yêu cầu presigned URL cho ${file.name}...`);
+        const res1 = await fetch('/api/upload-url', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({filename: file.name})
+        });
+        const {url: uploadUrl} = await res1.json();
+        log(`✔ Got PUT URL. Upload đang diễn ra...`);
+        // 2) PUT file thẳng tới MinIO
+        const res2 = await fetch(uploadUrl, {
+            method: 'PUT',
+            body: file
+        });
+        if (res2.ok) {
+            log(`🎉 Upload thành công! File key = "${file.name}"`);
+        } else {
+            log(`❌ Upload thất bại: ${res2.status}`);
+        }
+    };
+
+    // DOWNLOAD
+    document.getElementById('downloadBtn').onclick = async () => {
+        const key = document.getElementById('downloadKey').value.trim();
+        if (!key) return alert('Nhập vào tên file.');
+        log(`👉 Yêu cầu presigned GET URL cho "${key}"...`);
+        const res = await fetch(`/api/download-url?filename=${encodeURIComponent(key)}`);
+        const {url: downloadUrl} = await res.json();
+        log(`✔ Got GET URL. Bắt đầu download...`);
+        // 2 cách download: redirect hoặc fetch blob
+        // Cách đơn giản: mở link mới
+        console.log('downloadUrl', downloadUrl)
+        window.open(downloadUrl, '_blank');
+    };
+</script>
+</body>
+</html>

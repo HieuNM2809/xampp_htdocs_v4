@@ -1,0 +1,5 @@
+Nhớ thêm maphost local:
+127.0.0.1 minio
+
+
+docker-compose up --build -d
