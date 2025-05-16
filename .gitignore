@@ -10,3 +10,8 @@
 /98_nodejs_minio/data
 /103_presigned _url/app/node_modules
 /103_presigned _url/.idea
+/104_vitess_sharded
+/104_oauth2/app-server/node_modules
+/104_oauth2/auth-server/node_modules
+104_oauth2/.idea/104_vitess_sharded.iml
+/104_oauth2/.idea
