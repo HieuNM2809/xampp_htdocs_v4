@@ -51,3 +51,15 @@ docker compose down -v
 - Cấu hình mẫu không bật password để đơn giản hoá demo. Với môi trường thực tế, hãy bật ACL/password cho Redis và Sentinel, đồng thời cấu hình `requirepass`/`masterauth` tương ứng.
 
 
+
+
+=====  Cách Sentinel hoạt động (rất ngắn gọn)
+Mỗi Sentinel ping master định kỳ.
+Sau down-after-milliseconds mà không phản hồi
+→ 1 Sentinel đánh dấu S_DOWN (chỉ “nghi ngờ”).
+    Cần tối thiểu quorum Sentinel đồng ý để thành ODOWN (chắc chắn down)
+→ bầu leader
+→ chọn replica tốt nhất
+→ SLAVEOF NO ONE để promote thành master
+→ reconfig các replica còn lại.
+    Client dùng Sentinel (như ioredis) sẽ hỏi địa chỉ master mới qua SENTINEL get-master-addr-by-name.
