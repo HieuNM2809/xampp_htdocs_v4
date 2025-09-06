@@ -1,0 +1,245 @@
+groups:
+  - name: application.rules
+    interval: 30s
+    rules:
+      # Application Health Rules
+      - alert: ApplicationDown
+        expr: up{job="nodejs-app"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: application
+        annotations:
+          summary: "Application is down"
+          description: "The Node.js application has been down for more than 1 minute."
+          runbook_url: "https://wiki.company.com/runbooks/app-down"
+
+      - alert: HighResponseTime
+        expr: http_request_duration_seconds{quantile="0.95"} > 1
+        for: 5m
+        labels:
+          severity: warning
+          component: performance
+        annotations:
+          summary: "High response time detected"
+          description: "95th percentile response time is {{ $value }}s for endpoint {{ $labels.route }}"
+          runbook_url: "https://wiki.company.com/runbooks/high-latency"
+
+      - alert: HighErrorRate
+        expr: (sum(rate(http_requests_total{status_code=~"5.."}[5m])) / sum(rate(http_requests_total[5m]))) * 100 > 5
+        for: 2m
+        labels:
+          severity: critical
+          component: application
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is {{ $value | humanizePercentage }} which is above the 5% threshold"
+          runbook_url: "https://wiki.company.com/runbooks/high-error-rate"
+
+      # Business Logic Rules
+      - alert: OrderProcessingBacklog
+        expr: business_operations_total{operation_type="create_order", status="pending"} > 100
+        for: 3m
+        labels:
+          severity: warning
+          component: business
+        annotations:
+          summary: "Order processing backlog detected"
+          description: "There are {{ $value }} pending orders waiting for processing"
+
+      - alert: LowConversionRate
+        expr: (sum(rate(business_operations_total{operation_type="create_order", status="success"}[1h])) / sum(rate(http_requests_total{route="/"}[1h]))) < 0.01
+        for: 10m
+        labels:
+          severity: warning
+          component: business
+        annotations:
+          summary: "Conversion rate is low"
+          description: "Current conversion rate is {{ $value | humanizePercentage }}, which is below 1%"
+
+      # Database Rules
+      - alert: DatabaseConnectionPoolHigh
+        expr: database_connections_active > 80
+        for: 2m
+        labels:
+          severity: warning
+          component: database
+        annotations:
+          summary: "Database connection pool usage is high"
+          description: "Database connection pool is at {{ $value }} connections (>80%)"
+
+      - alert: SlowDatabaseQueries
+        expr: database_query_duration_seconds{quantile="0.95"} > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          component: database
+        annotations:
+          summary: "Slow database queries detected"
+          description: "95th percentile database query time is {{ $value }}s"
+
+      - alert: DatabaseErrors
+        expr: rate(database_queries_total{status="error"}[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: critical
+          component: database
+        annotations:
+          summary: "High database error rate"
+          description: "Database error rate is {{ $value }} errors per second"
+
+      # Cache Rules
+      - alert: LowCacheHitRate
+        expr: (cache_hits_total / (cache_hits_total + cache_misses_total)) * 100 < 70
+        for: 5m
+        labels:
+          severity: warning
+          component: cache
+        annotations:
+          summary: "Low cache hit rate"
+          description: "Cache hit rate is {{ $value | humanizePercentage }}, which is below 70%"
+
+      - alert: CacheSizeHigh
+        expr: cache_size_bytes > 500000000  # 500MB
+        for: 3m
+        labels:
+          severity: warning
+          component: cache
+        annotations:
+          summary: "Cache size is high"
+          description: "Cache size is {{ $value | humanizeBytes }}"
+
+      # Memory and CPU Rules
+      - alert: HighMemoryUsage
+        expr: (system_memory_usage_bytes{type="heap_used"} / system_memory_usage_bytes{type="heap_total"}) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          component: system
+        annotations:
+          summary: "High memory usage"
+          description: "Memory usage is {{ $value | humanizePercentage }}"
+
+      - alert: HighCPUUsage
+        expr: system_cpu_usage_percent > 80
+        for: 5m
+        labels:
+          severity: warning
+          component: system
+        annotations:
+          summary: "High CPU usage"
+          description: "CPU usage is {{ $value }}%"
+
+      # Business KPI Rules
+      - alert: RevenueDropped
+        expr: |
+          (
+            sum(rate(order_value_dollars_sum[1h])) - 
+            sum(rate(order_value_dollars_sum[1h] offset 1h))
+          ) / sum(rate(order_value_dollars_sum[1h] offset 1h)) * 100 < -20
+        for: 15m
+        labels:
+          severity: critical
+          component: business
+        annotations:
+          summary: "Revenue dropped significantly"
+          description: "Revenue has dropped by {{ $value | humanizePercentage }} compared to the previous hour"
+
+      - alert: UserRegistrationDropped
+        expr: rate(user_registrations_total[1h]) < 5
+        for: 30m
+        labels:
+          severity: warning
+          component: business
+        annotations:
+          summary: "User registrations are low"
+          description: "User registration rate is {{ $value }} per hour, which is below normal"
+
+  - name: sli.rules
+    interval: 30s
+    rules:
+      # SLI Recording Rules
+      - record: sli:api_success_rate
+        expr: |
+          (
+            sum(rate(http_requests_total{status_code!~"5.."}[5m]))
+            /
+            sum(rate(http_requests_total[5m]))
+          )
+
+      - record: sli:api_latency_95th
+        expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))
+
+      - record: sli:api_latency_99th
+        expr: histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))
+
+      - record: sli:database_success_rate
+        expr: |
+          (
+            sum(rate(database_queries_total{status="success"}[5m]))
+            /
+            sum(rate(database_queries_total[5m]))
+          )
+
+      - record: sli:cache_hit_rate
+        expr: |
+          (
+            sum(rate(cache_hits_total[5m]))
+            /
+            (sum(rate(cache_hits_total[5m])) + sum(rate(cache_misses_total[5m])))
+          )
+
+  - name: business.rules
+    interval: 60s
+    rules:
+      # Business Metrics Recording Rules
+      - record: business:hourly_revenue
+        expr: sum(rate(order_value_dollars_sum[1h]))
+
+      - record: business:hourly_orders
+        expr: sum(rate(business_operations_total{operation_type="create_order", status="success"}[1h]))
+
+      - record: business:conversion_rate
+        expr: |
+          (
+            sum(rate(business_operations_total{operation_type="create_order", status="success"}[1h]))
+            /
+            sum(rate(http_requests_total{route="/"}[1h]))
+          )
+
+      - record: business:average_order_value
+        expr: |
+          (
+            sum(rate(order_value_dollars_sum[1h]))
+            /
+            sum(rate(business_operations_total{operation_type="create_order", status="success"}[1h]))
+          )
+
+  - name: infrastructure.rules
+    interval: 15s
+    rules:
+      # Infrastructure Recording Rules
+      - record: infra:cpu_utilization
+        expr: 100 - (avg(irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)
+
+      - record: infra:memory_utilization
+        expr: |
+          (
+            (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes)
+            /
+            node_memory_MemTotal_bytes
+          ) * 100
+
+      - record: infra:disk_utilization
+        expr: |
+          (
+            (node_filesystem_size_bytes - node_filesystem_avail_bytes)
+            /
+            node_filesystem_size_bytes
+          ) * 100
+
+      - record: infra:network_throughput_in
+        expr: sum(rate(node_network_receive_bytes_total[5m]))
+
+      - record: infra:network_throughput_out
+        expr: sum(rate(node_network_transmit_bytes_total[5m]))

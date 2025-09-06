@@ -1,0 +1,275 @@
+global:
+  # The smarthost and SMTP sender used for mail notifications.
+  smtp_smarthost: 'localhost:587'
+  smtp_from: 'alerts@yourcompany.com'
+  smtp_auth_username: 'alerts@yourcompany.com'
+  smtp_auth_password: 'your-email-password'
+  
+  # Slack webhook URL for notifications
+  slack_api_url: 'https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK'
+
+# The directory from which notification templates are read.
+templates:
+- '/etc/alertmanager/templates/*.tmpl'
+
+# The root route on which each incoming alert enters.
+route:
+  # The labels by which incoming alerts are grouped together.
+  group_by: ['alertname', 'cluster', 'service']
+  
+  # When a new group of alerts is created by an incoming alert, wait at
+  # least 'group_wait' to send the initial notification.
+  group_wait: 30s
+  
+  # When the first notification was sent, wait 'group_interval' to send a batch
+  # of new alerts that started firing for that group.
+  group_interval: 5m
+  
+  # If an alert has successfully been sent, wait 'repeat_interval' to
+  # resend them.
+  repeat_interval: 12h
+  
+  # A default receiver
+  receiver: 'default'
+  
+  # Routes for specific alert types
+  routes:
+  # Critical alerts - immediate notification
+  - match:
+      severity: critical
+    receiver: 'critical-alerts'
+    group_wait: 10s
+    group_interval: 1m
+    repeat_interval: 5m
+    
+  # Warning alerts - less frequent notifications
+  - match:
+      severity: warning
+    receiver: 'warning-alerts'
+    group_wait: 30s
+    group_interval: 5m
+    repeat_interval: 2h
+    
+  # Business alerts - business hours only
+  - match:
+      component: business
+    receiver: 'business-alerts'
+    group_wait: 1m
+    group_interval: 10m
+    repeat_interval: 4h
+    
+  # Database alerts - DBA team
+  - match:
+      component: database
+    receiver: 'database-alerts'
+    group_wait: 30s
+    group_interval: 3m
+    repeat_interval: 1h
+    
+  # Performance alerts - DevOps team
+  - match:
+      component: performance
+    receiver: 'performance-alerts'
+    group_wait: 2m
+    group_interval: 5m
+    repeat_interval: 30m
+    
+  # Infrastructure alerts - Ops team
+  - match_re:
+      component: system|infrastructure
+    receiver: 'infrastructure-alerts'
+    group_wait: 1m
+    group_interval: 5m
+    repeat_interval: 2h
+
+# Inhibition rules allow to mute a set of alerts given that another alert is firing.
+inhibit_rules:
+# Same alert rule but different severity
+- source_match:
+    severity: 'critical'
+  target_match:
+    severity: 'warning'
+  equal: ['alertname', 'cluster', 'service']
+
+# Application down inhibits all other app alerts
+- source_match:
+    alertname: 'ApplicationDown'
+  target_match_re:
+    alertname: '.*'
+  equal: ['job']
+
+# Database down inhibits database-related alerts
+- source_match:
+    component: 'database'
+    severity: 'critical'
+  target_match:
+    component: 'database'
+  equal: ['instance']
+
+receivers:
+# Default receiver (fallback)
+- name: 'default'
+  email_configs:
+  - to: 'devops@yourcompany.com'
+    subject: '{{ range .Alerts }}{{ .Annotations.summary }}{{ end }}'
+    body: |
+      {{ range .Alerts }}
+      Alert: {{ .Annotations.summary }}
+      Description: {{ .Annotations.description }}
+      Severity: {{ .Labels.severity }}
+      Instance: {{ .Labels.instance }}
+      Time: {{ .StartsAt }}
+      {{ end }}
+
+# Critical alerts - multiple channels
+- name: 'critical-alerts'
+  email_configs:
+  - to: 'oncall@yourcompany.com,devops-lead@yourcompany.com'
+    subject: '🚨 CRITICAL ALERT: {{ range .Alerts }}{{ .Annotations.summary }}{{ end }}'
+    body: |
+      🚨 CRITICAL ALERT 🚨
+      
+      {{ range .Alerts }}
+      Alert: {{ .Annotations.summary }}
+      Description: {{ .Annotations.description }}
+      Component: {{ .Labels.component }}
+      Severity: {{ .Labels.severity }}
+      Instance: {{ .Labels.instance }}
+      Started: {{ .StartsAt }}
+      Runbook: {{ .Annotations.runbook_url }}
+      
+      {{ end }}
+      
+      Please investigate immediately!
+  
+  slack_configs:
+  - api_url: 'https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK'
+    channel: '#critical-alerts'
+    color: 'danger'
+    title: '🚨 Critical Alert - {{ range .Alerts }}{{ .Annotations.summary }}{{ end }}'
+    text: |
+      {{ range .Alerts }}
+      *Alert:* {{ .Annotations.summary }}
+      *Description:* {{ .Annotations.description }}
+      *Component:* {{ .Labels.component }}
+      *Instance:* {{ .Labels.instance }}
+      *Time:* {{ .StartsAt }}
+      {{ if .Annotations.runbook_url }}*Runbook:* {{ .Annotations.runbook_url }}{{ end }}
+      {{ end }}
+  
+  # Webhook for PagerDuty or other alerting systems
+  webhook_configs:
+  - url: 'http://localhost:9093/webhook/pagerduty'
+    send_resolved: true
+
+# Warning alerts
+- name: 'warning-alerts'
+  email_configs:
+  - to: 'devops@yourcompany.com'
+    subject: '⚠️ Warning: {{ range .Alerts }}{{ .Annotations.summary }}{{ end }}'
+    body: |
+      ⚠️ WARNING ALERT ⚠️
+      
+      {{ range .Alerts }}
+      Alert: {{ .Annotations.summary }}
+      Description: {{ .Annotations.description }}
+      Component: {{ .Labels.component }}
+      Instance: {{ .Labels.instance }}
+      Started: {{ .StartsAt }}
+      {{ if .Annotations.runbook_url }}Runbook: {{ .Annotations.runbook_url }}{{ end }}
+      {{ end }}
+  
+  slack_configs:
+  - channel: '#monitoring'
+    color: 'warning'
+    title: '⚠️ Warning - {{ range .Alerts }}{{ .Annotations.summary }}{{ end }}'
+    text: |
+      {{ range .Alerts }}
+      *Alert:* {{ .Annotations.summary }}
+      *Description:* {{ .Annotations.description }}
+      *Component:* {{ .Labels.component }}
+      *Instance:* {{ .Labels.instance }}
+      {{ end }}
+
+# Business alerts
+- name: 'business-alerts'
+  email_configs:
+  - to: 'product@yourcompany.com,business@yourcompany.com'
+    subject: '📊 Business Alert: {{ range .Alerts }}{{ .Annotations.summary }}{{ end }}'
+    body: |
+      📊 BUSINESS ALERT 📊
+      
+      {{ range .Alerts }}
+      Alert: {{ .Annotations.summary }}
+      Description: {{ .Annotations.description }}
+      Impact: Business KPI affected
+      Started: {{ .StartsAt }}
+      {{ end }}
+  
+  slack_configs:
+  - channel: '#business-metrics'
+    color: '#ff9900'
+    title: '📊 Business Alert - {{ range .Alerts }}{{ .Annotations.summary }}{{ end }}'
+
+# Database alerts
+- name: 'database-alerts'
+  email_configs:
+  - to: 'dba@yourcompany.com,devops@yourcompany.com'
+    subject: '🗄️ Database Alert: {{ range .Alerts }}{{ .Annotations.summary }}{{ end }}'
+    body: |
+      🗄️ DATABASE ALERT 🗄️
+      
+      {{ range .Alerts }}
+      Alert: {{ .Annotations.summary }}
+      Description: {{ .Annotations.description }}
+      Database Component: {{ .Labels.component }}
+      Instance: {{ .Labels.instance }}
+      Started: {{ .StartsAt }}
+      {{ end }}
+  
+  slack_configs:
+  - channel: '#database-alerts'
+    color: '#0066cc'
+    title: '🗄️ Database Alert - {{ range .Alerts }}{{ .Annotations.summary }}{{ end }}'
+
+# Performance alerts
+- name: 'performance-alerts'
+  email_configs:
+  - to: 'performance@yourcompany.com,devops@yourcompany.com'
+    subject: '⚡ Performance Alert: {{ range .Alerts }}{{ .Annotations.summary }}{{ end }}'
+    body: |
+      ⚡ PERFORMANCE ALERT ⚡
+      
+      {{ range .Alerts }}
+      Alert: {{ .Annotations.summary }}
+      Description: {{ .Annotations.description }}
+      Performance Impact: {{ .Labels.component }}
+      Instance: {{ .Labels.instance }}
+      Started: {{ .StartsAt }}
+      {{ end }}
+  
+  slack_configs:
+  - channel: '#performance'
+    color: '#ffcc00'
+    title: '⚡ Performance Alert - {{ range .Alerts }}{{ .Annotations.summary }}{{ end }}'
+
+# Infrastructure alerts
+- name: 'infrastructure-alerts'
+  email_configs:
+  - to: 'infrastructure@yourcompany.com,ops@yourcompany.com'
+    subject: '🏗️ Infrastructure Alert: {{ range .Alerts }}{{ .Annotations.summary }}{{ end }}'
+    body: |
+      🏗️ INFRASTRUCTURE ALERT 🏗️
+      
+      {{ range .Alerts }}
+      Alert: {{ .Annotations.summary }}
+      Description: {{ .Annotations.description }}
+      System Component: {{ .Labels.component }}
+      Instance: {{ .Labels.instance }}
+      Started: {{ .StartsAt }}
+      {{ end }}
+  
+  slack_configs:
+  - channel: '#infrastructure'
+    color: '#6600cc'
+    title: '🏗️ Infrastructure Alert - {{ range .Alerts }}{{ .Annotations.summary }}{{ end }}'

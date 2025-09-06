@@ -1,0 +1,117 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'monitoring-demo'
+    replica: 'prometheus-1'
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
+
+# Load rules and evaluate them
+rule_files:
+  - "/etc/prometheus/rules/*.yml"
+
+# Scrape configurations
+scrape_configs:
+  # Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  # Node.js Application
+  - job_name: 'nodejs-app'
+    static_configs:
+      - targets: ['app:3000']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+    scrape_timeout: 5s
+    honor_labels: true
+    params:
+      format: ['prometheus']
+
+  # Node Exporter (System metrics)
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  # cAdvisor (Container metrics)
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  # PostgreSQL Exporter (if needed)
+  - job_name: 'postgres-exporter'
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+    honor_labels: true
+
+  # Redis Exporter (if needed)
+  - job_name: 'redis-exporter'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  # Application-specific metrics with labels
+  - job_name: 'app-business-metrics'
+    static_configs:
+      - targets: ['app:3000']
+    metrics_path: '/metrics'
+    scrape_interval: 5s
+    params:
+      format: ['prometheus']
+    metric_relabel_configs:
+      # Add instance labels for better identification
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'nodejs-app'
+      
+      # Rename some metrics for better organization
+      - source_labels: [__name__]
+        regex: 'nodejs_app_(.*)'
+        target_label: __name__
+        replacement: 'app_${1}'
+
+  # Health check endpoints
+  - job_name: 'health-checks'
+    static_configs:
+      - targets: 
+        - 'app:3000'
+        - 'prometheus:9090'
+        - 'grafana:3000'
+    metrics_path: '/health'
+    scrape_interval: 30s
+    scrape_timeout: 10s
+
+# Remote write configuration (for long-term storage if needed)
+# remote_write:
+#   - url: "http://remote-storage:9201/write"
+#     queue_config:
+#       max_samples_per_send: 1000
+#       max_shards: 200
+#       capacity: 2500
+
+# Remote read configuration (for long-term storage if needed)
+# remote_read:
+#   - url: "http://remote-storage:9201/read"
+
+# Storage configuration
+storage:
+  tsdb:
+    path: '/prometheus'
+    retention.time: '30d'
+    retention.size: '10GB'
+    wal-compression: true
