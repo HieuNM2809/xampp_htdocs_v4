@@ -1,111 +1,91 @@
-version: "3.9"
-
+version: "3.8"
 services:
-  redis-master:
+  redis-1:
     image: redis:7.2-alpine
-    container_name: redis-master
+    container_name: redis-1
     command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
     volumes:
-      - ./redis/conf/redis-master.conf:/usr/local/etc/redis/redis.conf:ro
+      - ./redis/redis-1.conf:/usr/local/etc/redis/redis.conf:ro
+      - redis1-data:/data
     ports:
-      - "6379:6379"
+      - "6379:6379"   # Master: Map port 6379 của container ra port 6379 của host
     networks:
-      sentinel_net:
-        ipv4_address: 172.28.0.10
+      - redis-net
 
-  redis-replica-1:
+  redis-2:
     image: redis:7.2-alpine
-    container_name: redis-replica-1
-    depends_on:
-      - redis-master
-    command: ["redis-server", "/usr/local/etc/redis/redis.conf", "--replicaof", "172.28.0.10", "6379"]
+    container_name: redis-2
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
     volumes:
-      - ./redis/conf/redis-replica.conf:/usr/local/etc/redis/redis.conf:ro
+      - ./redis/redis-2.conf:/usr/local/etc/redis/redis.conf:ro
+      - redis2-data:/data
+    ports:
+      - "6380:6379"   # Replica 1: Map port 6379 của container ra port 6380 của host
     networks:
-      sentinel_net:
-        ipv4_address: 172.28.0.11
+      - redis-net
 
-  redis-replica-2:
+  redis-3:
     image: redis:7.2-alpine
-    container_name: redis-replica-2
-    depends_on:
-      - redis-master
-    command: ["redis-server", "/usr/local/etc/redis/redis.conf", "--replicaof", "172.28.0.10", "6379"]
+    container_name: redis-3
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
     volumes:
-      - ./redis/conf/redis-replica.conf:/usr/local/etc/redis/redis.conf:ro
+      - ./redis/redis-3.conf:/usr/local/etc/redis/redis.conf:ro
+      - redis3-data:/data
+    ports:
+      - "6381:6379"   # Replica 2: Map port 6379 của container ra port 6381 của host
     networks:
-      sentinel_net:
-        ipv4_address: 172.28.0.12
+      - redis-net
 
-  sentinel1:
+  sentinel-1:
     image: redis:7.2-alpine
     container_name: redis-sentinel-1
-    depends_on:
-      - redis-master
-      - redis-replica-1
-      - redis-replica-2
     command: ["redis-sentinel", "/usr/local/etc/redis/sentinel.conf"]
     volumes:
-      - ./sentinel/sentinel1.conf:/usr/local/etc/redis/sentinel.conf
+      - ./sentinel/sentinel-1.conf:/usr/local/etc/redis/sentinel.conf
     ports:
       - "26379:26379"
     networks:
-      sentinel_net:
-        ipv4_address: 172.28.0.21
+      - redis-net
+    depends_on:
+      - redis-1
+      - redis-2
+      - redis-3
 
-  sentinel2:
+  sentinel-2:
     image: redis:7.2-alpine
     container_name: redis-sentinel-2
-    depends_on:
-      - redis-master
-      - redis-replica-1
-      - redis-replica-2
     command: ["redis-sentinel", "/usr/local/etc/redis/sentinel.conf"]
     volumes:
-      - ./sentinel/sentinel2.conf:/usr/local/etc/redis/sentinel.conf
+      - ./sentinel/sentinel-2.conf:/usr/local/etc/redis/sentinel.conf
     ports:
       - "26380:26379"
     networks:
-      sentinel_net:
-        ipv4_address: 172.28.0.22
+      - redis-net
+    depends_on:
+      - redis-1
+      - redis-2
+      - redis-3
 
-  sentinel3:
+  sentinel-3:
     image: redis:7.2-alpine
     container_name: redis-sentinel-3
-    depends_on:
-      - redis-master
-      - redis-replica-1
-      - redis-replica-2
     command: ["redis-sentinel", "/usr/local/etc/redis/sentinel.conf"]
     volumes:
-      - ./sentinel/sentinel3.conf:/usr/local/etc/redis/sentinel.conf
+      - ./sentinel/sentinel-3.conf:/usr/local/etc/redis/sentinel.conf
     ports:
       - "26381:26379"
     networks:
-      sentinel_net:
-        ipv4_address: 172.28.0.23
-
-  node-app:
-    build: ./node-app
-    container_name: node-app
+      - redis-net
     depends_on:
-      - sentinel1
-      - sentinel2
-      - sentinel3
-    environment:
-      - REDIS_MASTER_NAME=mymaster
-      - REDIS_SENTINELS=sentinel1:26379,sentinel2:26379,sentinel3:26379
-    working_dir: /usr/src/app
-    command: ["sleep", "infinity"]
-    networks:
-      sentinel_net:
-        ipv4_address: 172.28.0.30
+      - redis-1
+      - redis-2
+      - redis-3
+
+volumes:
+  redis1-data:
+  redis2-data:
+  redis3-data:
 
 networks:
-  sentinel_net:
+  redis-net:
     driver: bridge
-    ipam:
-      config:
-        - subnet: 172.28.0.0/16
-
-

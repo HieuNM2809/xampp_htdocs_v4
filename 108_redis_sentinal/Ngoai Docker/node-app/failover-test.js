@@ -1,7 +1,11 @@
 const Redis = require('ioredis');
 
 function parseSentinels(env) {
-  if (!env) return [{ host: 'sentinel1', port: 26379 }, { host: 'sentinel2', port: 26379 }, { host: 'sentinel3', port: 26379 }];
+  if (!env) return [
+    { host: '127.0.0.1', port: 26379 },
+    { host: '127.0.0.1', port: 26380 },
+    { host: '127.0.0.1', port: 26381 }
+  ];
   return env.split(',').map((hp) => {
     const [host, port] = hp.split(':');
     return { host, port: Number(port || 26379) };
@@ -10,7 +14,7 @@ function parseSentinels(env) {
 
 const masterName = process.env.REDIS_MASTER_NAME || 'mymaster';
 const sentinels = parseSentinels(process.env.REDIS_SENTINELS);
-const redisPassword = process.env.REDIS_PASSWORD || undefined;
+const redisPassword = process.env.REDIS_PASSWORD || 'YourStrongPasswordHere';
 
 function createClient(role) {
   const client = new Redis({
