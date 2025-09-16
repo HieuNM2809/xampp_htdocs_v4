@@ -12,6 +12,15 @@ const masterName = process.env.REDIS_MASTER_NAME || 'mymaster';
 const sentinels = parseSentinels(process.env.REDIS_SENTINELS);
 const redisPassword = process.env.REDIS_PASSWORD || undefined;
 
+console.log({
+  sentinels,
+  name: masterName,
+  role: 'master',
+  password: redisPassword,
+  enableReadyCheck: true,
+  sentinelRetryStrategy: (times) => Math.min(times * 1000, 5000),
+});
+
 const redis = new Redis({
   sentinels,
   name: masterName,
