@@ -1,0 +1,37 @@
+{
+  "name": "sql-sharding-demo",
+  "version": "1.0.0",
+  "description": "A professional demo project for SQL sharding using Node.js and Docker",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "test": "jest"
+  },
+  "keywords": [
+    "sharding",
+    "mysql",
+    "nodejs",
+    "docker",
+    "database",
+    "scalability"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "mysql2": "^3.6.1",
+    "dotenv": "^16.3.1",
+    "winston": "^3.10.0",
+    "joi": "^17.10.1",
+    "cors": "^2.8.5",
+    "body-parser": "^1.20.2",
+    "helmet": "^7.0.0",
+    "compression": "^1.7.4",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1",
+    "jest": "^29.6.4"
+  }
+}
