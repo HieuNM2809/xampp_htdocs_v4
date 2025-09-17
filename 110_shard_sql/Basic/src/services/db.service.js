@@ -12,23 +12,56 @@ let shardConfigs = [];
 /**
  * Khởi tạo kết nối đến một shard
  */
-const connectToShard = async (config, shardIndex = -1) => {
+/**
+ * Đợi một khoảng thời gian trước khi thử lại
+ */
+const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+/**
+ * Khởi tạo kết nối đến một shard với cơ chế thử lại
+ */
+const connectToShard = async (config, shardIndex = -1, retries = 5) => {
   try {
-    // Tạo pool connection với cơ chế tự động reconnect
+    // Giảm số lượng connection mặc định để tránh lỗi "Too many connections"
     const poolConfig = {
       ...config,
       waitForConnections: true,
-      connectionLimit: config.connectionLimit || 10,
-      queueLimit: 0
+      connectionLimit: config.connectionLimit || 5,
+      queueLimit: 0,
+      // Thêm các cài đặt để xử lý kết nối tốt hơn
+      enableKeepAlive: true,
+      keepAliveInitialDelay: 10000, // 10 giây
+      // Cài đặt timeout
+      connectTimeout: 10000, // 10 giây
+      acquireTimeout: config.acquireTimeout || 30000, // 30 giây
+      idleTimeout: config.idleTimeout || 60000 // 60 giây
     };
 
     const pool = mysql.createPool(poolConfig);
 
-    // Kiểm tra kết nối
-    await pool.query('SELECT 1');
+    // Kiểm tra kết nối với timeout
+    const connectionPromise = pool.query('SELECT 1');
+
+    // Đặt timeout cho query kiểm tra kết nối
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Kết nối timeout')), 5000);
+    });
+
+    // Đợi kết nối hoặc timeout
+    await Promise.race([connectionPromise, timeoutPromise]);
 
     if (shardIndex >= 0) {
-      // Nếu đang reconnect, thay thế pool tại vị trí cũ
+      // Nếu đang reconnect, giải phóng kết nối cũ trước khi thay thế
+      if (shardPools[shardIndex]) {
+        try {
+          // Đóng tất cả kết nối trong pool cũ
+          await shardPools[shardIndex].end();
+        } catch (err) {
+          console.warn(`Không thể đóng pool cũ của shard ${shardIndex}: ${err.message}`);
+        }
+      }
+
+      // Thay thế pool tại vị trí cũ
       shardPools[shardIndex] = pool;
       console.log(`Đã kết nối lại thành công đến shard: ${config.host} - ${config.database}`);
     } else {
@@ -41,6 +74,15 @@ const connectToShard = async (config, shardIndex = -1) => {
     return pool;
   } catch (error) {
     console.error(`Lỗi khi kết nối đến shard ${config.host} - ${config.database}:`, error);
+
+    // Thực hiện thử lại nếu còn số lần thử
+    if (retries > 0) {
+      console.log(`Thử kết nối lại sau 2 giây... (còn ${retries} lần thử)`);
+      // Đợi 2 giây trước khi thử lại
+      await wait(2000);
+      return connectToShard(config, shardIndex, retries - 1);
+    }
+
     throw error;
   }
 };
@@ -50,12 +92,32 @@ const connectToShard = async (config, shardIndex = -1) => {
  */
 const initializeConnections = async () => {
   try {
+    // Lưu lại cấu hình để sử dụng sau này nếu cần reconnect
     shardConfigs = dbConfig.shards;
-    for (const config of shardConfigs) {
-      await connectToShard(config);
+
+    // Khởi tạo kết nối tuần tự để tránh quá nhiều kết nối cùng lúc
+    for (let i = 0; i < shardConfigs.length; i++) {
+      try {
+        await connectToShard(shardConfigs[i]);
+        // Đợi một chút trước khi kết nối đến shard tiếp theo
+        if (i < shardConfigs.length - 1) {
+          await wait(500);
+        }
+      } catch (error) {
+        console.error(`Không thể kết nối đến shard ${i}:`, error);
+        // Tiếp tục với shard tiếp theo thay vì dừng lại
+      }
     }
+
+    // Kiểm tra xem có kết nối thành công đến ít nhất một shard không
+    if (shardPools.length === 0) {
+      throw new Error('Không thể kết nối đến bất kỳ shard nào');
+    }
+
+    console.log(`Đã kết nối thành công đến ${shardPools.length}/${shardConfigs.length} shards`);
+
   } catch (error) {
-    console.error('Lỗi khi kết nối đến database:', error);
+    console.error('Lỗi khi khởi tạo kết nối database:', error);
     throw error;
   }
 };
@@ -194,11 +256,44 @@ setInterval(async () => {
   }
 }, 30000); // 30 giây
 
+/**
+ * Đóng tất cả các kết nối database
+ */
+const closeAllConnections = async () => {
+  console.log('Đang đóng tất cả các kết nối database...');
+  const closingPromises = [];
+
+  for (let i = 0; i < shardPools.length; i++) {
+    try {
+      closingPromises.push(shardPools[i].end());
+    } catch (error) {
+      console.error(`Lỗi khi đóng kết nối đến shard ${i}:`, error);
+    }
+  }
+
+  await Promise.allSettled(closingPromises);
+  console.log('Đã đóng tất cả các kết nối database');
+};
+
+// Đóng các kết nối khi ứng dụng kết thúc
+process.on('SIGINT', async () => {
+  console.log('Nhận tín hiệu SIGINT, đang đóng các kết nối...');
+  await closeAllConnections();
+  process.exit(0);
+});
+
+process.on('SIGTERM', async () => {
+  console.log('Nhận tín hiệu SIGTERM, đang đóng các kết nối...');
+  await closeAllConnections();
+  process.exit(0);
+});
+
 module.exports = {
   initializeConnections,
   getShardPool,
   executeQueryOnShard,
   executeQueryOnAllShards,
   executeQueryByKey,
-  checkConnections
+  checkConnections,
+  closeAllConnections
 };
