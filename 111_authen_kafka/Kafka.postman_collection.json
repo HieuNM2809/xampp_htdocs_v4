@@ -1,0 +1,68 @@
+{
+	"info": {
+		"_postman_id": "8202f0ac-e3ac-45cc-ad7b-1cdde5b8535e",
+		"name": "Kafka",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "16217054"
+	},
+	"item": [
+		{
+			"name": "1. Gửi message đơn lẻ",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		},
+		{
+			"name": "2. Gửi batch messages",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		},
+		{
+			"name": "3. Bắt đầu consume messages",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		},
+		{
+			"name": "4. Dừng consumer",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"groupId\": \"my-consumer-group\"\n  }",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:3000/consume/stop",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"consume",
+						"stop"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

@@ -5,7 +5,7 @@ Ví dụ hoàn chỉnh về cách kết nối và sử dụng Apache Kafka với
 ## 🚀 Tính năng
 
 - ✅ **Kafka Producer** với khả năng gửi message đơn lẻ và batch
-- ✅ **Kafka Consumer** với xử lý message và batch processing  
+- ✅ **Kafka Consumer** với xử lý message và batch processing
 - ✅ **RESTful API** để tương tác với Kafka thông qua HTTP
 - ✅ **Docker Compose** setup hoàn chỉnh với Kafka, Zookeeper và Kafka UI
 - ✅ **Graceful shutdown** handling cho production
@@ -187,7 +187,7 @@ node consumer.js --batch
 ```
 111_authen_kafka/
 ├── docker-compose.yml    # Docker Compose configuration
-├── Dockerfile           # Node.js app Dockerfile  
+├── Dockerfile           # Node.js app Dockerfile
 ├── package.json         # Node.js dependencies và scripts
 ├── .env.example         # Environment variables template
 ├── .env                # Local environment config (auto-created)
@@ -301,49 +301,139 @@ docker-compose ps
 2. **Check Kafka logs:**
 ```bash
 docker-compose logs kafka
+docker-compose logs zookeeper
 ```
 
-3. **Restart services:**
+3. **Restart services theo thứ tự:**
 ```bash
-docker-compose restart
+docker-compose down
+docker-compose up -d zookeeper
+sleep 10
+docker-compose up -d kafka
+sleep 15
+docker-compose up -d
 ```
 
 ### Node.js app lỗi kết nối
 
 1. **Kiểm tra KAFKA_BROKERS trong .env:**
 ```bash
-# Trong Docker: kafka:29092
+# Trong Docker container: kafka:29092
 # Local development: localhost:9092
 ```
 
 2. **Check network connectivity:**
 ```bash
 docker-compose exec nodejs-app ping kafka
+docker-compose exec nodejs-app telnet kafka 29092
+```
+
+3. **Xem logs chi tiết:**
+```bash
+docker-compose logs -f nodejs-app
 ```
 
 ### Consumer không nhận messages
 
-1. **Check consumer group:**
+1. **Check consumer groups:**
 ```bash
 curl http://localhost:3000/consumers
+
+# Hoặc check trực tiếp trong Kafka
+docker-compose exec kafka kafka-consumer-groups \
+  --bootstrap-server localhost:29092 \
+  --list
 ```
 
 2. **Reset consumer offset:**
 ```bash
-docker-compose exec kafka kafka-consumer-groups \\
-  --bootstrap-server localhost:29092 \\
-  --group your-group-id \\
-  --reset-offsets \\
-  --to-earliest \\
-  --topic your-topic \\
+docker-compose exec kafka kafka-consumer-groups \
+  --bootstrap-server localhost:29092 \
+  --group your-group-id \
+  --reset-offsets \
+  --to-earliest \
+  --topic your-topic \
   --execute
 ```
+
+3. **Check topic tồn tại:**
+```bash
+docker-compose exec kafka kafka-topics \
+  --bootstrap-server localhost:29092 \
+  --list
+```
+
+### Port conflicts
+
+Nếu gặp lỗi port đã được sử dụng, có thể thay đổi ports trong `docker-compose.yml`:
+```yaml
+ports:
+  - "3001:3000"  # API server
+  - "8081:8080"  # Kafka UI
+  - "9093:9092"  # Kafka broker
+```
+
+## ⚡ Performance Tips & Best Practices
+
+### 🚀 Production Optimization
+
+1. **Producer Settings:**
+```javascript
+const producer = kafka.producer({
+  maxInFlightRequests: 5,        // Tăng throughput
+  idempotent: true,             // Đảm bảo exactly-once
+  transactionTimeout: 30000,
+  retries: Number.MAX_VALUE,    // Auto retry
+  compression: 'gzip',          // Nén messages
+});
+```
+
+2. **Consumer Settings:**
+```javascript
+const consumer = kafka.consumer({
+  groupId: 'my-group',
+  sessionTimeout: 30000,
+  rebalanceTimeout: 60000,
+  maxWaitTimeInMs: 100,         // Giảm latency
+  minBytes: 1,                  // Min bytes to fetch
+  maxBytes: 1024 * 1024,        // Max bytes per request
+});
+```
+
+3. **Batch Processing:**
+- Sử dụng `sendBatchMessages()` cho producer
+- Implement batch consumer với `consumeWithBatch()`
+- Tối ưu batch size và timeout
+
+4. **Error Handling:**
+- Implement retry logic với exponential backoff
+- Dead letter queue cho failed messages
+- Monitor và alert cho failed consumers
+
+### 🔒 Security Best Practices
+
+```yaml
+# docker-compose.yml
+environment:
+  KAFKA_SECURITY_INTER_BROKER_PROTOCOL: SASL_SSL
+  KAFKA_SASL_MECHANISM_INTER_BROKER_PROTOCOL: PLAIN
+  KAFKA_SASL_ENABLED_MECHANISMS: PLAIN
+```
+
+### 📊 Monitoring
+
+- Sử dụng Kafka UI cho visualization
+- Monitor consumer lag
+- Track throughput metrics
+- Setup health checks
 
 ## 📚 Tài liệu tham khảo
 
 - [KafkaJS Documentation](https://kafka.js.org/)
 - [Apache Kafka Documentation](https://kafka.apache.org/documentation/)
 - [Docker Compose Documentation](https://docs.docker.com/compose/)
+- [Kafka Performance Tuning](https://kafka.apache.org/documentation/#tuning)
+- [Node.js Best Practices](https://github.com/goldbergyoni/nodebestpractices)
 
 ## 🤝 Contributing
 
@@ -362,24 +452,74 @@ MIT License - xem file [LICENSE](LICENSE) để biết thêm chi tiết.
 ## 🎯 Quick Start Commands
 
 ```bash
-# Start everything
+# 🚀 Start everything
 docker-compose up -d
 
-# Send test message
-curl -X POST http://localhost:3000/produce \\
-  -H "Content-Type: application/json" \\
-  -d '{"topic":"test","key":"key1","message":{"text":"Hello Kafka!"}}'
+# 🔍 Check all services running
+docker-compose ps
 
-# Start consumer
-curl -X POST http://localhost:3000/consume/start \\
-  -H "Content-Type: application/json" \\
-  -d '{"topics":["test"],"groupId":"test-group"}'
+# 📤 Send test message
+curl -X POST http://localhost:3000/produce \
+  -H "Content-Type: application/json" \
+  -d '{"topic":"test","key":"key1","message":{"text":"Hello Kafka!","timestamp":"'$(date -Iseconds)'"}}'
 
-# Check health
+# 🎧 Start consumer
+curl -X POST http://localhost:3000/consume/start \
+  -H "Content-Type: application/json" \
+  -d '{"topics":["test"],"groupId":"quick-start-group"}'
+
+# 📦 Send batch messages
+curl -X POST http://localhost:3000/produce/batch \
+  -H "Content-Type: application/json" \
+  -d '{
+    "topic":"test",
+    "messages":[
+      {"key":"msg1","value":{"type":"order","id":1,"status":"created"}},
+      {"key":"msg2","value":{"type":"order","id":2,"status":"processing"}},
+      {"key":"msg3","value":{"type":"order","id":3,"status":"completed"}}
+    ]
+  }'
+
+# 💓 Check health
 curl http://localhost:3000/health
 
-# Stop everything
-docker-compose down
+# 📊 View Kafka UI (trong browser)
+# http://localhost:8080
+
+# 🛑 Stop consumer
+curl -X POST http://localhost:3000/consume/stop \
+  -H "Content-Type: application/json" \
+  -d '{"groupId":"quick-start-group"}'
+
+# 🗂️ List active consumers
+curl http://localhost:3000/consumers
+
+# 🧹 Clean up everything
+docker-compose down -v
 ```
 
+### 🔧 Development Commands
+
+```bash
+# 🔄 Rebuild và restart
+docker-compose down && docker-compose build && docker-compose up -d
+
+# 📝 View logs
+docker-compose logs -f nodejs-app
+docker-compose logs -f kafka
+
+# 💾 Access Kafka container
+docker-compose exec kafka bash
+
+# 🔍 List all topics
+docker-compose exec kafka kafka-topics --bootstrap-server localhost:29092 --list
+
+# 📊 Describe specific topic
+docker-compose exec kafka kafka-topics --bootstrap-server localhost:29092 --describe --topic test
+```
+
+---
+
 🎉 **Happy Kafka-ing!** 🎉
+
+> **Tip**: Mở Kafka UI tại [http://localhost:8080](http://localhost:8080) để monitor messages theo thời gian thực!
