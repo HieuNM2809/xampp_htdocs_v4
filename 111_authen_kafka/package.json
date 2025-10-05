@@ -1,0 +1,30 @@
+{
+  "name": "nodejs-kafka-example",
+  "version": "1.0.0",
+  "description": "Node.js Kafka Producer and Consumer example with Docker",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "producer": "node producer.js",
+    "consumer": "node consumer.js"
+  },
+  "keywords": [
+    "kafka",
+    "nodejs",
+    "docker",
+    "producer",
+    "consumer"
+  ],
+  "author": "HieuNM",
+  "license": "MIT",
+  "dependencies": {
+    "kafkajs": "^2.2.4",
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}
