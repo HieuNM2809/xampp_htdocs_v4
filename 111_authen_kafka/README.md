@@ -13,6 +13,8 @@ Ví dụ hoàn chỉnh về cách kết nối và sử dụng Apache Kafka với
 - ✅ **Health check** endpoints cho monitoring
 - ✅ **Logging** chi tiết với emoji để dễ đọc
 - ✅ **TypeScript-ready** codebase structure
+- ✅ **SASL Authentication** support (PLAIN, SCRAM-SHA-256)
+- ✅ **SSL/TLS encryption** ready for production
 
 ## 📋 Yêu cầu
 
@@ -70,6 +72,71 @@ npm run dev
 
 # Production mode
 npm start
+```
+
+## 🔐 Authentication Setup
+
+Dự án support cả non-authenticated và authenticated Kafka connections.
+
+### Mode 1: Không Authentication (Default)
+
+```bash
+# Sử dụng .env với KAFKA_BROKERS=localhost:9092
+docker-compose up -d
+```
+
+### Mode 2: Với SASL Authentication
+
+1. **Cấu hình authentication:**
+```bash
+cp .env.auth.example .env
+```
+
+2. **Edit .env file:**
+```env
+KAFKA_BROKERS=localhost:9093
+KAFKA_USERNAME=nodejs-app
+KAFKA_PASSWORD=nodejs-app-secret
+KAFKA_SASL_MECHANISM=plain
+```
+
+3. **Start với authentication:**
+```bash
+docker-compose up -d
+```
+
+### 🔑 Available Users & Passwords
+
+| Username | Password | Role |
+|----------|----------|------|
+| `admin` | `admin-secret` | Super user |
+| `kafka-admin` | `kafka-admin-secret` | Super user |
+| `nodejs-app` | `nodejs-app-secret` | Application user |
+| `producer` | `producer-secret` | Producer only |
+| `consumer` | `consumer-secret` | Consumer only |
+| `demo-user` | `demo-password` | Demo/test |
+
+### 🛡️ SCRAM Authentication (Advanced)
+
+Để sử dụng SCRAM-SHA-256 (an toàn hơn PLAIN):
+
+1. **Update .env:**
+```env
+KAFKA_SASL_MECHANISM=scram-sha-256
+```
+
+2. **Tạo SCRAM users:**
+```bash
+# Linux/Mac
+./kafka-config/create-scram-users.sh
+
+# Windows (manual)
+docker exec kafka kafka-configs ^
+  --bootstrap-server localhost:29092 ^
+  --alter ^
+  --add-config "SCRAM-SHA-256=[password=nodejs-app-secret]" ^
+  --entity-type users ^
+  --entity-name nodejs-app
 ```
 
 ## 🌐 Endpoints
@@ -223,7 +290,9 @@ NODE_ENV=development
 ### Docker Services
 
 - **Zookeeper**: Port 2181
-- **Kafka**: Ports 9092, 29092
+- **Kafka**:
+  - PLAINTEXT: 9092 (external), 29092 (internal)
+  - SASL_PLAINTEXT: 9093 (external), 29093 (internal)
 - **Kafka UI**: Port 8080
 - **Node.js App**: Port 3000
 
@@ -412,12 +481,34 @@ const consumer = kafka.consumer({
 
 ### 🔒 Security Best Practices
 
+**Development (SASL/PLAIN):**
+```env
+KAFKA_BROKERS=localhost:9093
+KAFKA_USERNAME=nodejs-app
+KAFKA_PASSWORD=nodejs-app-secret
+KAFKA_SASL_MECHANISM=plain
+```
+
+**Production (SASL/SCRAM + SSL):**
+```env
+KAFKA_BROKERS=your-kafka-cluster:9093
+KAFKA_USERNAME=your-app-user
+KAFKA_PASSWORD=your-strong-password
+KAFKA_SASL_MECHANISM=scram-sha-256
+KAFKA_SSL=true
+KAFKA_SSL_CA=/path/to/ca-cert.pem
+KAFKA_SSL_CERT=/path/to/client-cert.pem
+KAFKA_SSL_KEY=/path/to/client-key.pem
+```
+
+**Docker Security Config:**
 ```yaml
-# docker-compose.yml
 environment:
   KAFKA_SECURITY_INTER_BROKER_PROTOCOL: SASL_SSL
-  KAFKA_SASL_MECHANISM_INTER_BROKER_PROTOCOL: PLAIN
-  KAFKA_SASL_ENABLED_MECHANISMS: PLAIN
+  KAFKA_SASL_MECHANISM_INTER_BROKER_PROTOCOL: SCRAM-SHA-256
+  KAFKA_SASL_ENABLED_MECHANISMS: SCRAM-SHA-256,SCRAM-SHA-512
+  KAFKA_AUTHORIZER_CLASS_NAME: kafka.security.authorizer.AclAuthorizer
+  KAFKA_SUPER_USERS: User:admin;User:kafka-admin
 ```
 
 ### 📊 Monitoring
@@ -451,8 +542,10 @@ MIT License - xem file [LICENSE](LICENSE) để biết thêm chi tiết.
 
 ## 🎯 Quick Start Commands
 
+### Without Authentication (Default)
+
 ```bash
-# 🚀 Start everything
+# 🚀 Start everything (no auth)
 docker-compose up -d
 
 # 🔍 Check all services running
@@ -462,7 +555,30 @@ docker-compose ps
 curl -X POST http://localhost:3000/produce \
   -H "Content-Type: application/json" \
   -d '{"topic":"test","key":"key1","message":{"text":"Hello Kafka!","timestamp":"'$(date -Iseconds)'"}}'
+```
 
+### With Authentication
+
+```bash
+# 🔐 Setup authentication
+cp .env.auth.example .env
+# Edit .env: uncomment KAFKA_USERNAME, KAFKA_PASSWORD, etc.
+
+# 🚀 Start with authentication
+docker-compose up -d
+
+# ✅ Verify authentication logs
+docker-compose logs nodejs-app | grep -i "authentication\|sasl"
+
+# 📤 Send authenticated message
+curl -X POST http://localhost:3000/produce \
+  -H "Content-Type: application/json" \
+  -d '{"topic":"secure-test","key":"auth-key1","message":{"text":"Hello Secured Kafka!","user":"authenticated-user","timestamp":"'$(date -Iseconds)'"}}'
+```
+
+### Common Commands
+
+```bash
 # 🎧 Start consumer
 curl -X POST http://localhost:3000/consume/start \
   -H "Content-Type: application/json" \

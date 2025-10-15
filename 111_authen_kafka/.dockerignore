@@ -26,3 +26,5 @@ logs
 docker-compose.yml
 Dockerfile
 .dockerignore
+kafka-config
+.env.auth.example

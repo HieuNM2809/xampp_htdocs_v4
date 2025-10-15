@@ -2,14 +2,38 @@ const { Kafka } = require('kafkajs');
 require('dotenv').config();
 
 // Cấu hình Kafka client
-const kafka = new Kafka({
+const kafkaConfig = {
   clientId: 'nodejs-kafka-producer',
   brokers: [process.env.KAFKA_BROKERS || 'localhost:9092'],
   retry: {
     initialRetryTime: 100,
     retries: 8
   }
-});
+};
+
+// Thêm authentication nếu được cấu hình
+if (process.env.KAFKA_USERNAME && process.env.KAFKA_PASSWORD) {
+  kafkaConfig.sasl = {
+    mechanism: process.env.KAFKA_SASL_MECHANISM || 'plain',
+    username: process.env.KAFKA_USERNAME,
+    password: process.env.KAFKA_PASSWORD
+  };
+
+  // Cấu hình SSL nếu cần
+  if (process.env.KAFKA_SSL === 'true') {
+    kafkaConfig.ssl = {
+      ca: process.env.KAFKA_SSL_CA ? [process.env.KAFKA_SSL_CA] : undefined,
+      key: process.env.KAFKA_SSL_KEY,
+      cert: process.env.KAFKA_SSL_CERT,
+      rejectUnauthorized: process.env.KAFKA_SSL_REJECT_UNAUTHORIZED !== 'false'
+    };
+  }
+
+  console.log(`🔐 Kafka Producer sử dụng SASL authentication: ${kafkaConfig.sasl.mechanism.toUpperCase()}`);
+  console.log(`👤 Username: ${kafkaConfig.sasl.username}`);
+}
+
+const kafka = new Kafka(kafkaConfig);
 
 const producer = kafka.producer({
   maxInFlightRequests: 1,

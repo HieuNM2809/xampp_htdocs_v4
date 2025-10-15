@@ -18,6 +18,17 @@ let consumers = {};
 // Connect producer khi start app
 producer.connect().catch(console.error);
 
+// Hiển thị thông tin authentication
+if (process.env.KAFKA_USERNAME) {
+  console.log('🔐 Kafka Authentication enabled');
+  console.log(`👤 Username: ${process.env.KAFKA_USERNAME}`);
+  console.log(`🔑 Mechanism: ${process.env.KAFKA_SASL_MECHANISM || 'PLAIN'}`);
+  console.log(`🌐 Brokers: ${process.env.KAFKA_BROKERS || 'localhost:9092'}`);
+} else {
+  console.log('⚠️  Kafka Authentication disabled - sử dụng PLAINTEXT');
+  console.log('🌐 Brokers: ' + (process.env.KAFKA_BROKERS || 'localhost:9092'));
+}
+
 // Routes
 app.get('/', (req, res) => {
   res.json({
