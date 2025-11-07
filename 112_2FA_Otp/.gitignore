@@ -1,0 +1,52 @@
+# Node modules
+node_modules/
+
+# Database files
+*.db
+users.db
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Logs
+*.log
+npm-debug.log*
+logs/
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Backup codes (if saved locally)
+backup-codes*.txt
+
+# PM2
+.pm2/
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Dependencies lock files (optional - remove if you want to include)
+# package-lock.json
+# yarn.lock

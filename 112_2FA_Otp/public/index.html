@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2FA Demo - Xác thực 2 bước</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-shield-alt"></i> 2FA Demo</h1>
+            <p>Ví dụ về xác thực 2 bước với TOTP</p>
+        </header>
+
+        <!-- Loading Spinner -->
+        <div id="loading" class="loading hidden">
+            <i class="fas fa-spinner fa-spin"></i>
+            <span>Đang xử lý...</span>
+        </div>
+
+        <!-- Thông báo -->
+        <div id="message" class="message hidden"></div>
+
+        <!-- Form Đăng nhập/Đăng ký -->
+        <div id="auth-forms" class="auth-forms">
+            <div class="form-tabs">
+                <button id="login-tab" class="tab active" onclick="showLoginForm()">
+                    <i class="fas fa-sign-in-alt"></i> Đăng nhập
+                </button>
+                <button id="register-tab" class="tab" onclick="showRegisterForm()">
+                    <i class="fas fa-user-plus"></i> Đăng ký
+                </button>
+            </div>
+
+            <!-- Form Đăng nhập -->
+            <form id="login-form" class="form">
+                <h2>Đăng nhập</h2>
+                <div class="form-group">
+                    <label for="login-username">Username:</label>
+                    <input type="text" id="login-username" required>
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Password:</label>
+                    <input type="password" id="login-password" required>
+                </div>
+                <div id="totp-group" class="form-group hidden">
+                    <label for="login-totp">Mã 2FA (hoặc backup code):</label>
+                    <input type="text" id="login-totp" placeholder="123456">
+                    <small>Nhập mã từ ứng dụng authenticator hoặc backup code</small>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-sign-in-alt"></i> Đăng nhập
+                </button>
+            </form>
+
+            <!-- Form Đăng ký -->
+            <form id="register-form" class="form hidden">
+                <h2>Đăng ký tài khoản</h2>
+                <div class="form-group">
+                    <label for="register-username">Username:</label>
+                    <input type="text" id="register-username" required>
+                </div>
+                <div class="form-group">
+                    <label for="register-email">Email:</label>
+                    <input type="email" id="register-email" required>
+                </div>
+                <div class="form-group">
+                    <label for="register-password">Password:</label>
+                    <input type="password" id="register-password" required minlength="6">
+                    <small>Ít nhất 6 ký tự</small>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-user-plus"></i> Đăng ký
+                </button>
+            </form>
+        </div>
+
+        <!-- Dashboard sau khi đăng nhập -->
+        <div id="dashboard" class="dashboard hidden">
+            <div class="user-info">
+                <h2>Chào mừng, <span id="current-username"></span>!</h2>
+                <p><i class="fas fa-envelope"></i> Email: <span id="current-email"></span></p>
+                <div class="security-status">
+                    <i id="security-icon" class="fas"></i>
+                    <span id="security-text"></span>
+                </div>
+            </div>
+
+            <div class="security-section">
+                <h3><i class="fas fa-shield-alt"></i> Bảo mật tài khoản</h3>
+
+                <div id="enable-2fa-section" class="security-card">
+                    <h4>Kích hoạt xác thực 2 bước</h4>
+                    <p>Tăng cường bảo mật tài khoản với TOTP (Time-based One-Time Password)</p>
+                    <button id="setup-2fa-btn" class="btn btn-success">
+                        <i class="fas fa-mobile-alt"></i> Thiết lập 2FA
+                    </button>
+                </div>
+
+                <div id="manage-2fa-section" class="security-card hidden">
+                    <h4>Quản lý 2FA</h4>
+                    <p>2FA đã được kích hoạt cho tài khoản của bạn</p>
+                    <div class="btn-group">
+                        <button id="regenerate-codes-btn" class="btn btn-info">
+                            <i class="fas fa-refresh"></i> Tạo lại backup codes
+                        </button>
+                        <button id="disable-2fa-btn" class="btn btn-danger">
+                            <i class="fas fa-times"></i> Tắt 2FA
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="actions">
+                <button id="logout-btn" class="btn btn-secondary">
+                    <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                </button>
+            </div>
+        </div>
+
+        <!-- Modal Setup 2FA -->
+        <div id="setup-2fa-modal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3><i class="fas fa-mobile-alt"></i> Thiết lập 2FA</h3>
+                    <button class="close-modal" onclick="closeModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div id="qr-step" class="step">
+                        <h4>Bước 1: Quét mã QR</h4>
+                        <p>Sử dụng ứng dụng authenticator (Google Authenticator, Authy, etc.) để quét mã QR:</p>
+                        <div id="qr-code" class="qr-container"></div>
+                        <div class="manual-entry">
+                            <h5>Hoặc nhập thủ công:</h5>
+                            <div class="secret-key">
+                                <code id="manual-key"></code>
+                                <button onclick="copySecret()" class="btn-copy">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="verify-step" class="step">
+                        <h4>Bước 2: Xác nhận</h4>
+                        <p>Nhập mã 6 chữ số từ ứng dụng authenticator:</p>
+                        <div class="form-group">
+                            <input type="text" id="setup-totp-code" placeholder="123456" maxlength="6">
+                        </div>
+                        <button id="verify-2fa-btn" class="btn btn-success">
+                            <i class="fas fa-check"></i> Xác nhận
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Backup Codes -->
+        <div id="backup-codes-modal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3><i class="fas fa-key"></i> Backup Codes</h3>
+                    <button class="close-modal" onclick="closeModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="backup-codes-info">
+                        <p><strong>Quan trọng:</strong> Lưu trữ các mã này ở nơi an toàn. Mỗi mã chỉ sử dụng được một lần.</p>
+                        <p>Bạn có thể sử dụng các mã này để đăng nhập khi không có ứng dụng authenticator.</p>
+                    </div>
+                    <div id="backup-codes-list" class="backup-codes-list"></div>
+                    <div class="backup-actions">
+                        <button onclick="downloadBackupCodes()" class="btn btn-info">
+                            <i class="fas fa-download"></i> Tải xuống
+                        </button>
+                        <button onclick="printBackupCodes()" class="btn btn-secondary">
+                            <i class="fas fa-print"></i> In
+                        </button>
+                        <button onclick="copyBackupCodes()" class="btn btn-primary">
+                            <i class="fas fa-copy"></i> Sao chép
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Confirm Password -->
+        <div id="confirm-password-modal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3><i class="fas fa-lock"></i> Xác nhận Password</h3>
+                    <button class="close-modal" onclick="closeModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p>Nhập password để xác nhận hành động:</p>
+                    <div class="form-group">
+                        <input type="password" id="confirm-password" placeholder="Password">
+                    </div>
+                    <div class="modal-actions">
+                        <button id="confirm-password-btn" class="btn btn-primary">Xác nhận</button>
+                        <button onclick="closeModal()" class="btn btn-secondary">Hủy</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>© 2024 2FA Demo - Ví dụ về xác thực 2 bước</p>
+        <p>Hỗ trợ: Google Authenticator, Authy, Microsoft Authenticator, và các ứng dụng TOTP khác</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
