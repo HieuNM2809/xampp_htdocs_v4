@@ -8,8 +8,9 @@ Chào mừng bạn đến với **Cassandra Learning Journey**! Vì bạn đã b
 1. **[Basic Concepts](01-basic-concepts.md)** - So sánh concepts cơ bản
 2. **[Data Distribution Explained](cassandra-data-distribution-explained.md)** - Chi tiết về token ranges & clustering
 3. **[TTL (Time To Live) Explained](cassandra-ttl-explained.md)** - Automatic data expiration
-4. **[Architecture Differences](02-architecture.md)** - RDBMS vs NoSQL architecture
-5. **[Data Types Comparison](03-data-types.md)** - MySQL vs Cassandra data types
+4. **[Advanced TTL Examples](advanced-ttl-examples.md)** - Production-grade TTL patterns
+5. **[Architecture Differences](02-architecture.md)** - RDBMS vs NoSQL architecture
+6. **[Data Types Comparison](03-data-types.md)** - MySQL vs Cassandra data types
 
 ### 🏗️ **Phase 2: Data Modeling (1-2 tuần)**
 4. **[Data Modeling Philosophy](04-data-modeling.md)** - Normalization vs Denormalization

@@ -280,9 +280,10 @@ SELECT * FROM posts_by_category WHERE category_id = ?;
 
 1. **📖 Start Reading:** [Learn/01-basic-concepts.md](01-basic-concepts.md)
 2. **🌐 Deep Dive:** [cassandra-data-distribution-explained.md](cassandra-data-distribution-explained.md) - Chi tiết về distributed architecture
-3. **🧪 Practice:** [exercises/exercise-01.js](exercises/exercise-01.js)
-4. **🔬 Compare:** [exercises/mysql-vs-cassandra-comparison.js](exercises/mysql-vs-cassandra-comparison.js)
-5. **🏗️ Build:** Create same application in both databases
+3. **⏰ TTL Advanced:** [advanced-ttl-examples.md](advanced-ttl-examples.md) - Production TTL patterns
+4. **🧪 Practice:** [exercises/exercise-01.js](exercises/exercise-01.js)
+5. **🔬 Compare:** [exercises/mysql-vs-cassandra-comparison.js](exercises/mysql-vs-cassandra-comparison.js)
+6. **🏗️ Build:** Create same application in both databases
 
 ## 💡 Pro Tips
 
