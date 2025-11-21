@@ -10,7 +10,9 @@
     "init-advanced": "node scripts/advanced-database.js",
     "demo": "node examples/api-examples.js",
     "demo-advanced": "node examples/advanced-queries.js",
-    "demo-no-joins": "node examples/no-joins-comparison.js"
+    "demo-no-joins": "node examples/no-joins-comparison.js",
+    "learn": "node Learn/exercises/exercise-01.js",
+    "learn-compare": "node Learn/exercises/mysql-vs-cassandra-comparison.js"
   },
   "keywords": ["cassandra", "nodejs", "express", "database", "nosql"],
   "author": "Your Name",

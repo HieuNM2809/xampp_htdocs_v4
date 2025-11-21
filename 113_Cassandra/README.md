@@ -150,6 +150,36 @@ Dự án này demonstrate các **advanced patterns** quan trọng trong Cassandr
 
 👉 **Tìm hiểu chi tiết:** [WHY_NO_JOINS.md](WHY_NO_JOINS.md)
 
+## 🎓 Learning Path cho MySQL Developers
+
+**Đặc biệt dành cho bạn!** Vì bạn đã biết MySQL, chúng tôi đã tạo một **learning curriculum hoàn chỉnh** để bạn học Cassandra một cách nhanh chóng và hiệu quả thông qua **so sánh với MySQL**.
+
+### 🚀 Quick Start Learning:
+
+```bash
+# Bắt đầu học ngay
+npm run learn                # Bài tập cơ bản
+npm run learn-compare       # So sánh MySQL vs Cassandra
+```
+
+### 📚 Learning Resources:
+
+- **[Learning Roadmap](Learn/learning-roadmap.md)** - 6-8 tuần curriculum
+- **[Quick Reference](Learn/quick-reference.md)** - MySQL → Cassandra cheat sheet
+- **[Basic Concepts](Learn/01-basic-concepts.md)** - So sánh concepts cơ bản
+- **[Data Modeling](Learn/04-data-modeling.md)** - Normalization vs Denormalization
+- **[Query Syntax](Learn/07-query-syntax.md)** - SQL vs CQL comparison
+- **[Interactive Exercises](Learn/exercises/)** - Hands-on practice
+
+### 🎯 Learning Path Overview:
+
+- **Week 1-2:** Fundamentals & mindset shift
+- **Week 3-4:** Data modeling & schema design
+- **Week 5-6:** Querying & operations
+- **Week 7-8:** Advanced topics & production
+
+👉 **Bắt đầu ngay:** [Learn/README.md](Learn/README.md)
+
 ## 📊 API Endpoints
 
 ### Users API
@@ -194,6 +224,16 @@ Dự án này demonstrate các **advanced patterns** quan trọng trong Cassandr
 
 ```
 cassandra-nodejs-example/
+├── Learn/                       # 🎓 Learning curriculum cho MySQL devs
+│   ├── README.md                # Learning overview
+│   ├── learning-roadmap.md      # 6-8 week curriculum
+│   ├── quick-reference.md       # MySQL → Cassandra cheat sheet
+│   ├── 01-basic-concepts.md     # Concepts comparison
+│   ├── 04-data-modeling.md      # Modeling approaches
+│   ├── 07-query-syntax.md       # SQL vs CQL syntax
+│   └── exercises/               # Interactive exercises
+│       ├── exercise-01.js       # Basic concepts practice
+│       └── mysql-vs-cassandra-comparison.js
 ├── config/
 │   └── database.js              # Kết nối Cassandra
 ├── models/
@@ -211,12 +251,15 @@ cassandra-nodejs-example/
 │   └── advanced-database.js     # Advanced schemas
 ├── examples/
 │   ├── api-examples.js          # Basic API demo
-│   └── advanced-queries.js      # Advanced patterns demo
+│   ├── advanced-queries.js      # Advanced patterns demo
+│   └── no-joins-comparison.js   # Why no JOINs explanation
 ├── .env                         # Environment variables
 ├── package.json
 ├── server.js                    # Main server file
-├── README.md                    # Basic documentation
+├── README.md                    # Project overview
 ├── ADVANCED_PATTERNS.md         # Advanced patterns guide
+├── MULTI_TABLE_EXAMPLES.md      # Multi-table query examples
+├── WHY_NO_JOINS.md             # JOINs explanation
 ├── GETTING_STARTED.md           # Quick start guide
 └── .gitignore
 ```
@@ -377,6 +420,8 @@ npm run init-advanced  # Khởi tạo advanced schemas
 npm run demo           # Demo basic API
 npm run demo-advanced  # Demo advanced patterns
 npm run demo-no-joins  # So sánh SQL JOINs vs Cassandra
+npm run learn           # Bắt đầu học Cassandra (từ MySQL)
+npm run learn-compare   # So sánh interactive MySQL vs Cassandra
 ```
 
 ### Testing API
