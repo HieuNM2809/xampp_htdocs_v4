@@ -9,6 +9,7 @@ const PORT = process.env.PORT || 3000;
 // Import routes
 const usersRoutes = require('./routes/users');
 const postsRoutes = require('./routes/posts');
+const advancedRoutes = require('./routes/advanced');
 
 // Middleware
 app.use(cors());
@@ -28,6 +29,7 @@ app.get('/health', (req, res) => {
 // API Routes
 app.use('/api/users', usersRoutes);
 app.use('/api/posts', postsRoutes);
+app.use('/api/advanced', advancedRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {

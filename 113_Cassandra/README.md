@@ -10,11 +10,13 @@ Một ví dụ hoàn chỉnh về cách sử dụng **Apache Cassandra** với *
 - [Cấu hình](#-cấu-hình)
 - [Sử dụng](#-sử-dụng)
 - [API Endpoints](#-api-endpoints)
+- [Advanced Patterns](#-advanced-patterns)
 - [Cấu trúc dự án](#-cấu-trúc-dự-án)
 - [Ví dụ CRUD](#-ví-dụ-crud)
 
 ## 🌟 Tính năng
 
+### Basic Features
 - ✅ Kết nối và quản lý database Cassandra
 - ✅ Models với CRUD operations hoàn chỉnh
 - ✅ RESTful API với Express.js
@@ -24,6 +26,16 @@ Một ví dụ hoàn chỉnh về cách sử dụng **Apache Cassandra** với *
 - ✅ Filtering và indexing
 - ✅ Graceful shutdown
 - ✅ Environment configuration
+
+### Advanced Features
+- 🚀 **Multi-table queries** với denormalization patterns
+- 🚀 **Aggregation patterns** với counter columns
+- 🚀 **Batch operations** để maintain consistency
+- 🚀 **Complex relationships** (many-to-many, hierarchical)
+- 🚀 **Time-series patterns** với partitioning
+- 🚀 **Activity feeds** và social features
+- 🚀 **Real-time analytics** với pre-computed aggregations
+- 🚀 **Performance optimizations** với parallel queries
 
 ## 🔧 Yêu cầu hệ thống
 
@@ -107,6 +119,37 @@ Server sẽ chạy tại: `http://localhost:3000`
 curl http://localhost:3000/health
 ```
 
+## 🚀 Advanced Patterns
+
+Dự án này demonstrate các **advanced patterns** quan trọng trong Cassandra:
+
+- **[Denormalization](ADVANCED_PATTERNS.md#denormalization-patterns)** - Duplicate data across tables
+- **[Multi-table queries](ADVANCED_PATTERNS.md#multi-table-queries)** - Application-level joins
+- **[Aggregation patterns](ADVANCED_PATTERNS.md#aggregation-patterns)** - Counter columns, pre-computed stats
+- **[Batch operations](ADVANCED_PATTERNS.md#batch-operations)** - Atomic multi-table updates
+- **[Complex relationships](ADVANCED_PATTERNS.md#complex-relationships)** - Many-to-many, hierarchical data
+- **[Performance optimization](ADVANCED_PATTERNS.md#performance-optimization)** - Parallel queries, partitioning
+
+👉 **Xem chi tiết:** [ADVANCED_PATTERNS.md](ADVANCED_PATTERNS.md)
+
+## ❌ Tại sao Cassandra không có JOIN?
+
+**Cassandra KHÔNG hỗ trợ JOIN operations** như SQL databases. Đây là design decision có chủ ý:
+
+- **Distributed architecture** - Data spread across multiple nodes
+- **Performance optimization** - Single-table queries are faster
+- **Horizontal scaling** focus - JOIN operations don't scale well
+- **NoSQL philosophy** - Denormalization over normalization
+
+### Thay thế JOIN bằng:
+
+1. **Application-level joins** - Query multiple tables parallel
+2. **Denormalization** - Store duplicate data for fast reads
+3. **Counter columns** - Real-time aggregation
+4. **Materialized views** - Pre-computed query results
+
+👉 **Tìm hiểu chi tiết:** [WHY_NO_JOINS.md](WHY_NO_JOINS.md)
+
 ## 📊 API Endpoints
 
 ### Users API
@@ -134,24 +177,48 @@ curl http://localhost:3000/health
 | POST | `/api/posts/:id/tags` | Thêm tag vào post |
 | DELETE | `/api/posts/:id/tags/:tag` | Xóa tag khỏi post |
 
+### Advanced API
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/advanced/users/:id/profile` | User profile với full details |
+| POST | `/api/advanced/users/:id/follow` | Follow user (batch operations) |
+| GET | `/api/advanced/categories/:id/details` | Category với posts và stats |
+| GET | `/api/advanced/search` | Cross-table search |
+| POST | `/api/advanced/posts` | Tạo post với denormalization |
+| GET | `/api/advanced/posts/hot` | Hot posts với engagement |
+| GET | `/api/advanced/tags/trending` | Trending tags |
+| GET | `/api/advanced/analytics/overview` | Platform analytics |
+
 ## 📁 Cấu trúc dự án
 
 ```
 cassandra-nodejs-example/
 ├── config/
-│   └── database.js          # Kết nối Cassandra
+│   └── database.js              # Kết nối Cassandra
 ├── models/
-│   ├── User.js              # User model với CRUD
-│   └── Post.js              # Post model với CRUD
+│   ├── User.js                  # Basic User model
+│   ├── Post.js                  # Basic Post model
+│   ├── UserProfile.js           # Advanced user với relationships
+│   ├── Category.js              # Category với multi-table queries
+│   └── AdvancedPost.js          # Posts với denormalization
 ├── routes/
-│   ├── users.js             # User API routes
-│   └── posts.js             # Post API routes
+│   ├── users.js                 # Basic User API
+│   ├── posts.js                 # Basic Post API
+│   └── advanced.js              # Advanced patterns API
 ├── scripts/
-│   └── init-database.js     # Script khởi tạo DB
-├── .env                     # Environment variables
+│   ├── init-database.js         # Basic schemas
+│   └── advanced-database.js     # Advanced schemas
+├── examples/
+│   ├── api-examples.js          # Basic API demo
+│   └── advanced-queries.js      # Advanced patterns demo
+├── .env                         # Environment variables
 ├── package.json
-├── server.js               # Main server file
-└── README.md
+├── server.js                    # Main server file
+├── README.md                    # Basic documentation
+├── ADVANCED_PATTERNS.md         # Advanced patterns guide
+├── GETTING_STARTED.md           # Quick start guide
+└── .gitignore
 ```
 
 ## 💡 Ví dụ CRUD
@@ -303,9 +370,13 @@ await client.execute(query, params, { prepare: true });
 ### Scripts có sẵn
 
 ```bash
-npm start          # Khởi động production server
-npm run dev        # Development với nodemon
-npm run init-db    # Khởi tạo database
+npm start              # Khởi động production server
+npm run dev            # Development với nodemon
+npm run init-db        # Khởi tạo basic database
+npm run init-advanced  # Khởi tạo advanced schemas
+npm run demo           # Demo basic API
+npm run demo-advanced  # Demo advanced patterns
+npm run demo-no-joins  # So sánh SQL JOINs vs Cassandra
 ```
 
 ### Testing API

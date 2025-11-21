@@ -7,7 +7,10 @@
     "start": "node server.js",
     "dev": "nodemon server.js",
     "init-db": "node scripts/init-database.js",
-    "demo": "node examples/api-examples.js"
+    "init-advanced": "node scripts/advanced-database.js",
+    "demo": "node examples/api-examples.js",
+    "demo-advanced": "node examples/advanced-queries.js",
+    "demo-no-joins": "node examples/no-joins-comparison.js"
   },
   "keywords": ["cassandra", "nodejs", "express", "database", "nosql"],
   "author": "Your Name",
