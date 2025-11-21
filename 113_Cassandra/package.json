@@ -12,7 +12,9 @@
     "demo-advanced": "node examples/advanced-queries.js",
     "demo-no-joins": "node examples/no-joins-comparison.js",
     "learn": "node Learn/exercises/exercise-01.js",
-    "learn-compare": "node Learn/exercises/mysql-vs-cassandra-comparison.js"
+    "learn-compare": "node Learn/exercises/mysql-vs-cassandra-comparison.js",
+    "learn-roadmap": "cat Learn/advanced-cassandra-roadmap.md",
+    "learn-advanced": "echo 'Advanced Cassandra Learning Path Ready! See Learn/advanced-cassandra-roadmap.md'"
   },
   "keywords": ["cassandra", "nodejs", "express", "database", "nosql"],
   "author": "Your Name",

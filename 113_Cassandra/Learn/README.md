@@ -12,6 +12,12 @@ Chào mừng bạn đến với **Cassandra Learning Journey**! Vì bạn đã b
 5. **[Architecture Differences](02-architecture.md)** - RDBMS vs NoSQL architecture
 6. **[Data Types Comparison](03-data-types.md)** - MySQL vs Cassandra data types
 
+### 🚀 **Advanced Topics:**
+- **[Advanced Cassandra Roadmap](advanced-cassandra-roadmap.md)** - Complete advanced learning path
+- **[Advanced Data Modeling](advanced-data-modeling-patterns.md)** - Master-level patterns
+- **[Consistency Levels Advanced](consistency-levels-advanced.md)** - Tunable consistency mastery
+- **[Production Performance Tuning](production-performance-tuning.md)** - Sub-10ms optimization
+
 ### 🏗️ **Phase 2: Data Modeling (1-2 tuần)**
 4. **[Data Modeling Philosophy](04-data-modeling.md)** - Normalization vs Denormalization
 5. **[Schema Design](05-schema-design.md)** - Tables, Keys, Partitions
