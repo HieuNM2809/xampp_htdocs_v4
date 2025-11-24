@@ -132,6 +132,36 @@ Dự án này demonstrate các **advanced patterns** quan trọng trong Cassandr
 
 👉 **Xem chi tiết:** [ADVANCED_PATTERNS.md](ADVANCED_PATTERNS.md)
 
+## 🛒 **E-commerce Platform với Cassandra**
+
+**MỚI!** Hệ thống quản lý bán hàng production-ready demonstrating tất cả advanced patterns:
+
+### **🎯 Features:**
+- **42 tables** được tối ưu cho different query patterns
+- **User management** với authentication & security
+- **Product catalog** với search & inventory tracking
+- **Shopping cart** với TTL expiration
+- **Order processing** với real-time analytics
+- **Multi-datacenter ready** for global deployment
+
+### **⚡ Quick Start:**
+```bash
+# Setup e-commerce database
+npm run setup-ecommerce
+
+# Load sample data (users, products, orders)
+npm run load-sample-data
+
+# Start e-commerce API server
+npm run start-ecommerce
+
+# Test e-commerce APIs
+curl http://localhost:3001/api/products/search?q=smartphone
+```
+
+👉 **Chi tiết:** [ecommerce-cassandra/README.md](ecommerce-cassandra/README.md)
+👉 **Advanced features:** [ecommerce-cassandra/ECOMMERCE_FEATURES.md](ecommerce-cassandra/ECOMMERCE_FEATURES.md)
+
 ## ❌ Tại sao Cassandra không có JOIN?
 
 **Cassandra KHÔNG hỗ trợ JOIN operations** như SQL databases. Đây là design decision có chủ ý:
@@ -422,6 +452,8 @@ npm run demo-advanced  # Demo advanced patterns
 npm run demo-no-joins  # So sánh SQL JOINs vs Cassandra
 npm run learn           # Bắt đầu học Cassandra (từ MySQL)
 npm run learn-compare   # So sánh interactive MySQL vs Cassandra
+npm run setup-ecommerce # Setup e-commerce database với advanced patterns
+npm run start-ecommerce # Chạy e-commerce API server (production-ready)
 ```
 
 ### Testing API

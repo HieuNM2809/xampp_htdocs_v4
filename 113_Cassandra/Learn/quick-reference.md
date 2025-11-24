@@ -45,8 +45,9 @@
 | `AUTO_INCREMENT` | Use `UUID` or application logic |
 | `DEFAULT` values | Handle in application |
 | `UNIQUE` constraints | Only for PRIMARY KEY |
-| Transactions across tables | Batch operations (limited) |
+| Transactions across tables | Batch operations (limited) or compensation patterns |
 | Manual data cleanup | Use `USING TTL seconds` for auto-expiration |
+| Multi-table ACID transactions | ❌ Not supported - use lightweight transactions (single partition) or event sourcing |
 
 ## 🔑 Primary Key Concepts
 
@@ -281,6 +282,7 @@ SELECT * FROM posts_by_category WHERE category_id = ?;
 1. **📖 Start Reading:** [Learn/01-basic-concepts.md](01-basic-concepts.md)
 2. **🌐 Deep Dive:** [cassandra-data-distribution-explained.md](cassandra-data-distribution-explained.md) - Chi tiết về distributed architecture
 3. **⏰ TTL Advanced:** [advanced-ttl-examples.md](advanced-ttl-examples.md) - Production TTL patterns
+4. **⚖️ Transactions:** [transactions-in-cassandra.md](transactions-in-cassandra.md) - ACID vs BASE, LWT, compensation patterns
 4. **🧪 Practice:** [exercises/exercise-01.js](exercises/exercise-01.js)
 5. **🔬 Compare:** [exercises/mysql-vs-cassandra-comparison.js](exercises/mysql-vs-cassandra-comparison.js)
 6. **🏗️ Build:** Create same application in both databases

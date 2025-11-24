@@ -17,6 +17,7 @@ Chào mừng bạn đến với **Cassandra Learning Journey**! Vì bạn đã b
 - **[Advanced Data Modeling](advanced-data-modeling-patterns.md)** - Master-level patterns
 - **[Consistency Levels Advanced](consistency-levels-advanced.md)** - Tunable consistency mastery
 - **[Production Performance Tuning](production-performance-tuning.md)** - Sub-10ms optimization
+- **[Transactions in Cassandra](transactions-in-cassandra.md)** - Why no ACID, what alternatives exist
 
 ### 🏗️ **Phase 2: Data Modeling (1-2 tuần)**
 4. **[Data Modeling Philosophy](04-data-modeling.md)** - Normalization vs Denormalization

@@ -14,7 +14,11 @@
     "learn": "node Learn/exercises/exercise-01.js",
     "learn-compare": "node Learn/exercises/mysql-vs-cassandra-comparison.js",
     "learn-roadmap": "cat Learn/advanced-cassandra-roadmap.md",
-    "learn-advanced": "echo 'Advanced Cassandra Learning Path Ready! See Learn/advanced-cassandra-roadmap.md'"
+    "learn-advanced": "echo 'Advanced Cassandra Learning Path Ready! See Learn/advanced-cassandra-roadmap.md'",
+    "setup-ecommerce": "node ecommerce-cassandra/scripts/setup-ecommerce.js",
+    "load-sample-data": "node ecommerce-cassandra/scripts/load-sample-data.js",
+    "start-ecommerce": "node ecommerce-cassandra/server.js",
+    "test-ecommerce": "node ecommerce-cassandra/scripts/performance-test.js"
   },
   "keywords": ["cassandra", "nodejs", "express", "database", "nosql"],
   "author": "Your Name",
@@ -25,7 +29,10 @@
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "uuid": "^9.0.1",
-    "axios": "^1.6.0"
+    "axios": "^1.6.0",
+    "bcrypt": "^5.1.1",
+    "helmet": "^7.1.0",
+    "express-rate-limit": "^7.1.5"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
