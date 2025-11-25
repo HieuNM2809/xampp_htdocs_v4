@@ -4,15 +4,18 @@
 
 ## Tính năng
 
-- ✅ Tạo, đọc, cập nhật, xóa todo items (CRUD)
-- ✅ Đánh dấu hoàn thành/chưa hoàn thành
-- ✅ Phân loại độ ưu tiên (low, medium, high)  
-- ✅ Thiết lập ngày hết hạn
-- ✅ Lọc theo trạng thái hoàn thành
-- ✅ RESTful API với JSON responses
-- ✅ Clean Architecture với tách biệt rõ ràng các layer
-- ✅ PostgreSQL database với migrations
-- ✅ Docker support cho development
+- ✅ **Frontend Web Application**: Giao diện đẹp, responsive với HTML/CSS/JavaScript
+- ✅ **CRUD operations**: Tạo, đọc, cập nhật, xóa todo items 
+- ✅ **Toggle completion**: Đánh dấu hoàn thành/chưa hoàn thành
+- ✅ **Priority system**: Phân loại độ ưu tiên (low, medium, high)  
+- ✅ **Due dates**: Thiết lập ngày hết hạn với cảnh báo quá hạn
+- ✅ **Smart filtering**: Lọc theo trạng thái hoàn thành với đếm số lượng
+- ✅ **Real-time updates**: Cập nhật realtime với toast notifications
+- ✅ **RESTful API**: API đầy đủ với JSON responses
+- ✅ **Clean Architecture**: Tách biệt rõ ràng các layer
+- ✅ **PostgreSQL**: Database với migrations tự động
+- ✅ **Docker support**: Container hóa cho development
+- ✅ **Responsive design**: Tương thích mobile và desktop
 
 ## Cấu trúc dự án (Clean Architecture)
 
@@ -34,11 +37,16 @@ todo-app/
 │   │       └── todo.go
 │   └── service/                # Business logic layer
 │       └── todo.go
+├── web/                        # Frontend web application
+│   ├── index.html              # Main HTML file
+│   ├── styles.css              # CSS styling
+│   └── script.js               # JavaScript functionality
 ├── migrations/                 # Database migrations
 │   ├── 001_create_todos_table.up.sql
 │   └── 001_create_todos_table.down.sql
 ├── docker-compose.yml          # Docker services
-├── Makefile                   # Build automation
+├── Makefile                   # Build automation (Linux/macOS)
+├── run-windows.ps1            # PowerShell script (Windows)
 ├── go.mod                     # Go module
 └── README.md
 ```
@@ -118,6 +126,11 @@ make run
 make build
 ./bin/api
 ```
+
+**Truy cập ứng dụng:**
+- 🌐 **Frontend**: http://localhost:8080
+- 🔗 **API**: http://localhost:8080/api/v1/todos  
+- ❤️  **Health Check**: http://localhost:8080/health
 
 ## API Endpoints
 
@@ -208,6 +221,7 @@ DELETE /api/v1/todos/{id}
 
 ## Development Commands
 
+### Linux/macOS (với Make):
 ```bash
 # Setup development environment
 make dev-setup
@@ -230,6 +244,34 @@ make logs
 
 # Clean build artifacts
 make clean
+```
+
+### Windows (với PowerShell):
+```powershell
+# Cho phép chạy PowerShell scripts (chỉ cần 1 lần)
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+
+# Setup development environment
+.\run-windows.ps1 dev-setup
+
+# Run application
+.\run-windows.ps1 run
+
+# Build application  
+.\run-windows.ps1 build
+
+# Test API endpoints
+.\run-windows.ps1 test-api
+
+# Start/stop Docker services
+.\run-windows.ps1 docker-up
+.\run-windows.ps1 docker-down
+
+# Open app in browser
+.\run-windows.ps1 open
+
+# View all commands
+.\run-windows.ps1 help
 ```
 
 ## Database Management

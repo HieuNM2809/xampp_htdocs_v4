@@ -39,6 +39,17 @@ func (r *Router) SetupRoutes() *gin.Engine {
 		c.Next()
 	})
 
+	// Serve static files - specific files first
+	router.StaticFile("/styles.css", "./web/styles.css")
+	router.StaticFile("/script.js", "./web/script.js")
+	router.StaticFile("/favicon.ico", "./web/favicon.ico")
+
+	// Serve entire web directory for other assets
+	router.Static("/assets", "./web")
+
+	// Serve index.html for root path (must be last)
+	router.StaticFile("/", "./web/index.html")
+
 	// Health check endpoint
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{
