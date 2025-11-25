@@ -15,6 +15,7 @@
 - ✅ **Clean Architecture**: Tách biệt rõ ràng các layer
 - ✅ **PostgreSQL**: Database với migrations tự động
 - ✅ **Docker support**: Container hóa cho development
+- ✅ **Hot reload**: Auto-restart khi code thay đổi với Air
 - ✅ **Responsive design**: Tương thích mobile và desktop
 
 ## Cấu trúc dự án (Clean Architecture)
@@ -90,47 +91,71 @@ SERVER_PORT=8080
 JWT_SECRET=your-secret-key-here
 ```
 
-### 3. Khởi động PostgreSQL
+### 3. Chọn Platform Setup
 
-#### Option A: Sử dụng Docker (Khuyến nghị)
+#### **🖥️ Windows (Khuyến nghị sử dụng PowerShell)**
 
-```bash
-# Khởi động PostgreSQL
-make docker-up
+```powershell
+# Cho phép PowerShell scripts (1 lần duy nhất)
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
-# Hoặc khởi động tất cả services (bao gồm pgAdmin)
-make docker-up-all
+# Setup toàn bộ môi trường (Database + Dependencies + Hot Reload)
+.\run-windows.ps1 dev-setup
 ```
 
-#### Option B: PostgreSQL local
+> ⚠️ **Lưu ý cho Windows**: Makefile có thể gặp lỗi trên Windows. Khuyến nghị dùng PowerShell script. Xem chi tiết: [WINDOWS-SETUP.md](WINDOWS-SETUP.md)
 
-Cài đặt PostgreSQL locally và tạo database:
-
-```sql
-CREATE DATABASE todolist_db;
-```
-
-### 4. Cài đặt dependencies
+#### **🐧 Linux/macOS (với Make)**
 
 ```bash
-make deps
+# Setup môi trường
+make dev-setup
 ```
 
-### 5. Chạy ứng dụng
+#### **Manual Setup (All Platforms)**
 
 ```bash
-# Development
+# 1. Khởi động PostgreSQL
+make docker-up        # Linux/macOS
+.\run-windows.ps1 docker-up  # Windows
+
+# 2. Cài dependencies  
+make deps             # Linux/macOS
+.\run-windows.ps1 deps       # Windows
+```
+
+### 4. Chạy ứng dụng
+
+#### **🔥 Hot Reload Mode (Khuyến nghị):**
+
+**Windows:**
+```powershell
+.\run-windows.ps1 dev
+```
+
+**Linux/macOS:**
+```bash
+make dev
+```
+
+#### **Normal Mode:**
+
+**Windows:**
+```powershell
+.\run-windows.ps1 run
+```
+
+**Linux/macOS:**
+```bash
 make run
-
-# Hoặc build và chạy
-make build
-./bin/api
 ```
 
 **Truy cập ứng dụng:**
 - 🌐 **Frontend**: http://localhost:8080
 - 🔗 **API**: http://localhost:8080/api/v1/todos  
 - ❤️  **Health Check**: http://localhost:8080/health
+
+> 💡 **Hot Reload**: Tự động restart khi code thay đổi, giúp development nhanh hơn 3-5x! Xem chi tiết: [HOT-RELOAD.md](HOT-RELOAD.md)
 
 ## API Endpoints
 
@@ -223,11 +248,17 @@ DELETE /api/v1/todos/{id}
 
 ### Linux/macOS (với Make):
 ```bash
-# Setup development environment
+# Setup development environment (includes hot reload)
 make dev-setup
 
-# Run application
+# 🔥 Run with hot reload (recommended)
+make dev
+
+# Run normally
 make run
+
+# Install hot reload tool
+make install-air
 
 # Build application
 make build
@@ -251,11 +282,17 @@ make clean
 # Cho phép chạy PowerShell scripts (chỉ cần 1 lần)
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
-# Setup development environment
+# Setup development environment (includes hot reload)
 .\run-windows.ps1 dev-setup
 
-# Run application
+# 🔥 Run with hot reload (recommended)
+.\run-windows.ps1 dev
+
+# Run normally
 .\run-windows.ps1 run
+
+# Install hot reload tool
+.\run-windows.ps1 install-air
 
 # Build application  
 .\run-windows.ps1 build
