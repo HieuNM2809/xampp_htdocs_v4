@@ -1,3 +1,5 @@
+# winget install ezwinports.make
+
 .PHONY: help build run test clean docker-up docker-down migrate
 
 # Default target
