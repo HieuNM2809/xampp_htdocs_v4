@@ -1,0 +1,290 @@
+package handler
+
+import (
+	"net/http"
+
+	"todo-app/internal/domain"
+
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+)
+
+// TodoHandler handles HTTP requests for todos
+type TodoHandler struct {
+	todoService domain.TodoService
+}
+
+// NewTodoHandler creates a new TodoHandler
+func NewTodoHandler(todoService domain.TodoService) *TodoHandler {
+	return &TodoHandler{
+		todoService: todoService,
+	}
+}
+
+// CreateTodo handles POST /todos
+func (h *TodoHandler) CreateTodo(c *gin.Context) {
+	var req domain.CreateTodoRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "Invalid request body",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	todo, err := h.todoService.CreateTodo(req.Title, req.Description, req.Priority, req.DueDate)
+	if err != nil {
+		if err == domain.ErrInvalidTitle || err == domain.ErrTitleTooLong ||
+			err == domain.ErrDescriptionTooLong || err == domain.ErrInvalidPriority {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to create todo",
+		})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"message": "Todo created successfully",
+		"data":    todo.ToResponse(),
+	})
+}
+
+// GetTodo handles GET /todos/:id
+func (h *TodoHandler) GetTodo(c *gin.Context) {
+	idParam := c.Param("id")
+	id, err := uuid.Parse(idParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid todo ID format",
+		})
+		return
+	}
+
+	todo, err := h.todoService.GetTodo(id)
+	if err != nil {
+		if err == domain.ErrTodoNotFound {
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": "Todo not found",
+			})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to get todo",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": todo.ToResponse(),
+	})
+}
+
+// GetAllTodos handles GET /todos
+func (h *TodoHandler) GetAllTodos(c *gin.Context) {
+	// Check for status filter
+	statusParam := c.Query("status")
+	if statusParam != "" {
+		if statusParam == "completed" {
+			todos, err := h.todoService.GetTodosByStatus(true)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"error": "Failed to get todos",
+				})
+				return
+			}
+			h.respondWithTodos(c, todos)
+			return
+		} else if statusParam == "pending" {
+			todos, err := h.todoService.GetTodosByStatus(false)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"error": "Failed to get todos",
+				})
+				return
+			}
+			h.respondWithTodos(c, todos)
+			return
+		} else {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "Invalid status parameter. Use 'completed' or 'pending'",
+			})
+			return
+		}
+	}
+
+	todos, err := h.todoService.GetAllTodos()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to get todos",
+		})
+		return
+	}
+
+	h.respondWithTodos(c, todos)
+}
+
+// UpdateTodo handles PUT /todos/:id
+func (h *TodoHandler) UpdateTodo(c *gin.Context) {
+	idParam := c.Param("id")
+	id, err := uuid.Parse(idParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid todo ID format",
+		})
+		return
+	}
+
+	var req domain.UpdateTodoRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "Invalid request body",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	// Get current todo to preserve existing values
+	currentTodo, err := h.todoService.GetTodo(id)
+	if err != nil {
+		if err == domain.ErrTodoNotFound {
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": "Todo not found",
+			})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to get todo",
+		})
+		return
+	}
+
+	// Prepare update parameters
+	title := currentTodo.Title
+	if req.Title != nil {
+		title = *req.Title
+	}
+
+	description := currentTodo.Description
+	if req.Description != nil {
+		description = *req.Description
+	}
+
+	priority := currentTodo.Priority
+	if req.Priority != nil {
+		priority = *req.Priority
+	}
+
+	completed := currentTodo.Completed
+	if req.Completed != nil {
+		completed = *req.Completed
+	}
+
+	dueDate := currentTodo.DueDate
+	if req.DueDate != nil {
+		dueDate = req.DueDate
+	}
+
+	todo, err := h.todoService.UpdateTodo(id, title, description, priority, completed, dueDate)
+	if err != nil {
+		if err == domain.ErrTodoNotFound {
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": "Todo not found",
+			})
+			return
+		}
+		if err == domain.ErrInvalidTitle || err == domain.ErrTitleTooLong ||
+			err == domain.ErrDescriptionTooLong || err == domain.ErrInvalidPriority {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to update todo",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Todo updated successfully",
+		"data":    todo.ToResponse(),
+	})
+}
+
+// DeleteTodo handles DELETE /todos/:id
+func (h *TodoHandler) DeleteTodo(c *gin.Context) {
+	idParam := c.Param("id")
+	id, err := uuid.Parse(idParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid todo ID format",
+		})
+		return
+	}
+
+	err = h.todoService.DeleteTodo(id)
+	if err != nil {
+		if err == domain.ErrTodoNotFound {
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": "Todo not found",
+			})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to delete todo",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Todo deleted successfully",
+	})
+}
+
+// ToggleComplete handles PATCH /todos/:id/toggle
+func (h *TodoHandler) ToggleComplete(c *gin.Context) {
+	idParam := c.Param("id")
+	id, err := uuid.Parse(idParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid todo ID format",
+		})
+		return
+	}
+
+	todo, err := h.todoService.ToggleComplete(id)
+	if err != nil {
+		if err == domain.ErrTodoNotFound {
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": "Todo not found",
+			})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to toggle todo completion",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Todo completion status toggled successfully",
+		"data":    todo.ToResponse(),
+	})
+}
+
+// respondWithTodos is a helper function to respond with a list of todos
+func (h *TodoHandler) respondWithTodos(c *gin.Context, todos []*domain.Todo) {
+	responses := make([]*domain.TodoResponse, len(todos))
+	for i, todo := range todos {
+		responses[i] = todo.ToResponse()
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data":  responses,
+		"count": len(responses),
+	})
+}
