@@ -2,6 +2,7 @@ package handler
 
 import (
 	"todo-app/internal/domain"
+	// "todo-app/internal/middleware"
 
 	"github.com/gin-gonic/gin"
 )
@@ -24,6 +25,9 @@ func (r *Router) SetupRoutes() *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 
 	router := gin.Default()
+
+	// Add request logging middleware
+	// router.Use(middleware.RequestLogger())
 
 	// Add CORS middleware
 	router.Use(func(c *gin.Context) {

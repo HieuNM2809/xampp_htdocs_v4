@@ -1,7 +1,11 @@
 package handler
 
 import (
+	"bytes"
+	"fmt"
+	"io"
 	"net/http"
+	"time"
 
 	"todo-app/internal/domain"
 
@@ -23,8 +27,30 @@ func NewTodoHandler(todoService domain.TodoService) *TodoHandler {
 
 // CreateTodo handles POST /todos
 func (h *TodoHandler) CreateTodo(c *gin.Context) {
+	// === LOG REQUEST INFO ===
+	fmt.Printf("\n🚀 === CREATE TODO REQUEST ===\n")
+	fmt.Printf("📍 Method: %s\n", c.Request.Method)
+	fmt.Printf("📍 URL: %s\n", c.Request.URL.String())
+	fmt.Printf("📍 Content-Type: %s\n", c.GetHeader("Content-Type"))
+	fmt.Printf("📍 User-Agent: %s\n", c.GetHeader("User-Agent"))
+	fmt.Printf("🕐 Timestamp: %s\n", time.Now().Format("2006-01-02 15:04:05"))
+
+	// Log raw body (for debugging)
+	if c.Request.Body != nil {
+		bodyBytes, err := io.ReadAll(c.Request.Body)
+		if err == nil {
+			fmt.Printf("📋 Raw Request Body: %s\n", string(bodyBytes))
+			// Restore body for binding
+			c.Request.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+		}
+	}
+
 	var req domain.CreateTodoRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		// === LOG BINDING ERROR ===
+		fmt.Printf("❌ JSON Binding Error: %v\n", err)
+		fmt.Printf("================================\n")
+
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error":   "Invalid request body",
 			"details": err.Error(),
@@ -32,20 +58,53 @@ func (h *TodoHandler) CreateTodo(c *gin.Context) {
 		return
 	}
 
+	// === LOG PARSED REQUEST DATA ===
+	fmt.Printf("✅ Successfully Parsed Request:\n")
+	fmt.Printf("   📝 Title: '%s'\n", req.Title)
+	fmt.Printf("   📝 Description: '%s'\n", req.Description)
+	fmt.Printf("   🎯 Priority: '%s'\n", req.Priority)
+	if req.DueDate != nil {
+		fmt.Printf("   📅 Due Date: %s\n", req.DueDate.Format("2006-01-02 15:04:05"))
+	} else {
+		fmt.Printf("   📅 Due Date: <nil>\n")
+	}
+
+	// === CALL SERVICE ===
+	fmt.Printf("🔧 Calling TodoService.CreateTodo...\n")
 	todo, err := h.todoService.CreateTodo(req.Title, req.Description, req.Priority, req.DueDate)
+
 	if err != nil {
+		// === LOG SERVICE ERROR ===
+		fmt.Printf("❌ Service Error: %v\n", err)
+		fmt.Printf("❌ Error Type: %T\n", err)
+
 		if err == domain.ErrInvalidTitle || err == domain.ErrTitleTooLong ||
 			err == domain.ErrDescriptionTooLong || err == domain.ErrInvalidPriority {
+			fmt.Printf("💡 Validation Error - returning 400\n")
+			fmt.Printf("================================\n")
+
 			c.JSON(http.StatusBadRequest, gin.H{
 				"error": err.Error(),
 			})
 			return
 		}
+
+		fmt.Printf("💥 Internal Error - returning 500\n")
+		fmt.Printf("================================\n")
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to create todo",
 		})
 		return
 	}
+
+	// === LOG SUCCESS ===
+	fmt.Printf("✅ Todo Created Successfully!\n")
+	fmt.Printf("   🆔 ID: %s\n", todo.ID.String())
+	fmt.Printf("   📝 Title: %s\n", todo.Title)
+	fmt.Printf("   🎯 Priority: %s\n", todo.Priority)
+	fmt.Printf("   ✅ Completed: %t\n", todo.Completed)
+	fmt.Printf("   📅 Created At: %s\n", todo.CreatedAt.Format("2006-01-02 15:04:05"))
+	fmt.Printf("================================\n")
 
 	c.JSON(http.StatusCreated, gin.H{
 		"message": "Todo created successfully",
