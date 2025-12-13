@@ -1,0 +1,35 @@
+[Unit]
+Description=Todo List API Server
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=todoapp
+Group=todoapp
+WorkingDirectory=/opt/todo-app
+ExecStart=/opt/todo-app/bin/todo-app
+Restart=always
+RestartSec=10
+
+# Environment file
+EnvironmentFile=/opt/todo-app/.env
+
+# Security settings
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/opt/todo-app/logs
+
+# Resource limits
+LimitNOFILE=65536
+MemoryLimit=512M
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=todo-app
+
+[Install]
+WantedBy=multi-user.target
