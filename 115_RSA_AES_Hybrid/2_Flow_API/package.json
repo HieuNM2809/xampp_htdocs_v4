@@ -1,0 +1,44 @@
+{
+  "name": "hybrid-encryption-realistic-flow",
+  "version": "1.0.0",
+  "description": "Realistic client-server hybrid encryption API flow demonstration",
+  "main": "realistic-server.js",
+  "scripts": {
+    "start": "node realistic-server.js",
+    "client": "node realistic-client.js",
+    "dev": "nodemon realistic-server.js",
+    "test": "npm run start & sleep 3 && npm run client",
+    "demo": "concurrently \"npm run start\" \"sleep 5 && npm run client\""
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "crypto": "^1.0.1", 
+    "node-rsa": "^1.1.1",
+    "cors": "^2.8.5",
+    "body-parser": "^1.20.2",
+    "axios": "^1.6.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2",
+    "concurrently": "^8.2.2"
+  },
+  "keywords": [
+    "nodejs",
+    "rsa",
+    "aes", 
+    "hybrid-encryption",
+    "client-server",
+    "secure-api",
+    "cryptography",
+    "realistic-flow"
+  ],
+  "author": "Developer",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/example/hybrid-encryption-flow"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
