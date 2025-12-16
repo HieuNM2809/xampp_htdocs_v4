@@ -1,0 +1,197 @@
+# Artillery Load Test Configuration for APM Demo
+# Run with: artillery run load-test.yml
+
+config:
+  target: 'http://localhost:3000'
+  phases:
+    # Warm up phase
+    - duration: 30
+      arrivalRate: 5
+      name: "Warm up"
+    
+    # Ramp up phase  
+    - duration: 60
+      arrivalRate: 10
+      rampTo: 50
+      name: "Ramp up traffic"
+    
+    # Sustained load
+    - duration: 120
+      arrivalRate: 50
+      name: "Sustained load"
+    
+    # Peak load
+    - duration: 60
+      arrivalRate: 100
+      name: "Peak load"
+    
+    # Cool down
+    - duration: 30
+      arrivalRate: 10
+      name: "Cool down"
+
+  # Request timeout
+  timeout: 10
+
+  # Custom variables for dynamic testing
+  variables:
+    userIds:
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+    
+    searchQueries:
+      - "Nguyễn"
+      - "Trần"
+      - "Hà Nội"
+      - "email"
+    
+    heavyTaskIterations:
+      - 100000
+      - 500000
+      - 1000000
+
+  # Custom functions
+  processor: "./load-test-functions.js"
+
+scenarios:
+  # Basic health check (20% of traffic)
+  - weight: 20
+    name: "Health Check"
+    flow:
+      - get:
+          url: "/health"
+          expect:
+            - statusCode: 200
+
+  # User operations (40% of traffic)
+  - weight: 40
+    name: "User Operations"
+    flow:
+      # List all users
+      - get:
+          url: "/api/users"
+          expect:
+            - statusCode: 200
+            - hasProperty: "data"
+          capture:
+            - json: "$.count"
+              as: "userCount"
+      
+      # Get specific user
+      - get:
+          url: "/api/users/{{ $randomInt(1, 10) }}"
+          expect:
+            - statusCode: [200, 404]
+      
+      # Get user with orders (50% chance)
+      - get:
+          url: "/api/users/{{ userIds }}"
+          weight: 50
+          expect:
+            - statusCode: 200
+
+  # Dashboard operations (15% of traffic)
+  - weight: 15
+    name: "Dashboard"
+    flow:
+      - get:
+          url: "/api/dashboard"
+          expect:
+            - statusCode: 200
+            - hasProperty: "data.users"
+            - hasProperty: "data.stats"
+
+  # External API calls (10% of traffic)
+  - weight: 10
+    name: "External API"
+    flow:
+      - get:
+          url: "/api/external-data"
+          expect:
+            - statusCode: 200
+            - hasProperty: "data"
+
+  # Heavy computation (5% of traffic)
+  - weight: 5
+    name: "Heavy Task"
+    flow:
+      - post:
+          url: "/api/heavy-task"
+          json:
+            iterations: "{{ heavyTaskIterations }}"
+          expect:
+            - statusCode: 200
+            - hasProperty: "result"
+
+  # Error scenarios (5% of traffic)
+  - weight: 5
+    name: "Error Scenarios"
+    flow:
+      # Test different error types
+      - get:
+          url: "/api/error-test?type=validation"
+          expect:
+            - statusCode: 400
+      
+      - get:
+          url: "/api/error-test?type=database"
+          expect:
+            - statusCode: 500
+      
+      # Test 404
+      - get:
+          url: "/api/nonexistent-endpoint"
+          expect:
+            - statusCode: 404
+
+  # Mixed operations (5% of traffic)
+  - weight: 5
+    name: "Mixed Operations"
+    flow:
+      # Ping
+      - get:
+          url: "/api/ping"
+          expect:
+            - statusCode: 200
+      
+      # Random user
+      - get:
+          url: "/api/users/{{ $randomInt(1, 20) }}"
+          expect:
+            - statusCode: [200, 404]
+      
+      # Dashboard after user lookup
+      - get:
+          url: "/api/dashboard"
+          expect:
+            - statusCode: 200
+
+# Custom metrics and reporting
+metrics:
+  - name: "response_time_p95"
+    expression: "response_time.p95"
+  - name: "error_rate"  
+    expression: "(errors / requests) * 100"
+  - name: "requests_per_second"
+    expression: "requests / duration"
+
+# Plugin configuration
+plugins:
+  # Metrics plugin for detailed reporting
+  metrics-by-endpoint:
+    # Group metrics by endpoint
+    useOnlyRequestNames: true
+
+# Expected performance thresholds
+expectations:
+  # 95th percentile should be under 500ms
+  - http.response_time.p95: 500
+  
+  # Error rate should be under 5%
+  - http.response_time.max: 2000
+  
+  # Request rate should be maintained
+  - http.requests: 10000
