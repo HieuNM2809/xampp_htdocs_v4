@@ -1,67 +1,78 @@
 version: '3.8'
 
 services:
+  # Elasticsearch
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
-    container_name: elasticsearch
+    container_name: apm-elasticsearch
     environment:
+      - node.name=elasticsearch
+      - cluster.name=apm-cluster
       - discovery.type=single-node
-      - xpack.security.enabled=false
-      - xpack.security.http.ssl.enabled=false
-      - xpack.security.transport.ssl.enabled=false
+      - bootstrap.memory_lock=true
       - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
-    ports:
-      - "9200:9200"
+      # Tắt security để đơn giản hóa (chỉ dùng cho development)
+      - xpack.security.enabled=false
+      - xpack.security.enrollment.enabled=false
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
     volumes:
       - elasticsearch_data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
     networks:
-      - elastic
+      - apm-network
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5
 
+  # Kibana
   kibana:
     image: docker.elastic.co/kibana/kibana:8.11.0
-    container_name: kibana
+    container_name: apm-kibana
     environment:
       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
-      - XPACK_SECURITY_ENABLED=false
+      - server.host=0.0.0.0
     ports:
       - "5601:5601"
     networks:
-      - elastic
+      - apm-network
     depends_on:
       elasticsearch:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:5601/status || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:5601/api/status || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5
 
+  # APM Server
   apm-server:
     image: docker.elastic.co/apm/apm-server:8.11.0
     container_name: apm-server
-    command: >
-      apm-server -e
-        -E apm-server.host=0.0.0.0:8200
-        -E apm-server.rum.enabled=true
-        -E apm-server.rum.event_rate.limit=300
-        -E apm-server.rum.event_rate.lru_size=1000
-        -E apm-server.rum.allow_origins=['*']
-        -E apm-server.rum.library_pattern="node_modules|bower_components|~"
-        -E output.elasticsearch.hosts=["http://elasticsearch:9200"]
-        -E setup.kibana.host=http://kibana:5601
-        -E logging.level=info
-        -E logging.to_stderr=true
+    cap_add: ["CHOWN", "DAC_OVERRIDE", "SETGID", "SETUID"]
+    cap_drop: ["ALL"]
     ports:
       - "8200:8200"
     networks:
-      - elastic
+      - apm-network
+    command: >
+      apm-server -e
+        -E apm-server.rum.enabled=true
+        -E apm-server.host=0.0.0.0:8200
+        -E output.elasticsearch.hosts=["elasticsearch:9200"]
+        -E setup.kibana.host=kibana:5601
+        -E setup.template.enabled=true
+        -E logging.level=info
+        -E logging.to_stderr=true
     depends_on:
       elasticsearch:
+        condition: service_healthy
+      kibana:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8200/ || exit 1"]
@@ -69,39 +80,10 @@ services:
       timeout: 10s
       retries: 5
 
-  # Redis cho ví dụ cache
-  redis:
-    image: redis:7-alpine
-    container_name: redis
-    ports:
-      - "6379:6379"
-    networks:
-      - elastic
-    command: redis-server --appendonly yes
-    volumes:
-      - redis_data:/data
-
-  # PostgreSQL cho ví dụ database
-  postgres:
-    image: postgres:15-alpine
-    container_name: postgres
-    environment:
-      - POSTGRES_DB=apm_demo
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-    ports:
-      - "5432:5432"
-    networks:
-      - elastic
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
-
 volumes:
   elasticsearch_data:
-  redis_data:
-  postgres_data:
+    driver: local
 
 networks:
-  elastic:
+  apm-network:
     driver: bridge

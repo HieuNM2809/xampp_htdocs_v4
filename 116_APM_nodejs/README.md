@@ -1,366 +1,311 @@
-# Hướng dẫn Setup Elastic APM cho Node.js - Từ cơ bản đến nâng cao
+# APM Node.js với Elastic Stack - Ví dụ cơ bản
 
-Dưới đây là **hướng dẫn setup Elastic APM cho Node.js từ cơ bản → nâng cao**, đi theo đúng thực tế triển khai backend (Express / Fastify / NestJS), kèm **nhiều ví dụ và các case hay gặp khi chạy Docker + Elasticsearch/Kibana**.
+Đây là một ví dụ cơ bản về cách tích hợp APM (Application Performance Monitoring) với Node.js và Elastic Stack.
 
----
+## 📋 Mục lục
 
-## 1. Elastic APM là gì? (Hiểu đúng trước khi setup)
+- [Giới thiệu](#giới-thiệu)
+- [Yêu cầu](#yêu-cầu)
+- [Cài đặt](#cài-đặt)
+- [Chạy ứng dụng](#chạy-ứng-dụng)
+- [API Endpoints](#api-endpoints)
+- [Giám sát với Kibana](#giám-sát-với-kibana)
+- [Tính năng APM](#tính-năng-apm)
 
-Elastic APM giúp bạn:
+## 🚀 Giới thiệu
 
-* Theo dõi **request → response** (latency, p95, p99)
-* Trace **toàn bộ luồng xử lý**:
-  * HTTP
-  * DB (MySQL, PostgreSQL, MongoDB)
-  * Redis
-  * External HTTP
-* Bắt **error / exception**
-* Phân tích **bottleneck** (API chậm ở đâu)
+Ví dụ này demonstate cách:
+- Cấu hình APM agent cho Node.js
+- Tạo custom spans và metrics
+- Track errors và exceptions
+- Monitor performance của API endpoints
+- Sử dụng Kibana để visualize dữ liệu APM
 
-👉 Hiểu đơn giản:
-**APM = log + metrics + tracing (distributed tracing)**
+## 📋 Yêu cầu
 
----
+- Node.js >= 14.x
+- Docker và Docker Compose
+- Ít nhất 4GB RAM cho Elastic Stack
 
-## 2. Kiến trúc tổng thể Elastic APM
+## ⚙️ Cài đặt
 
-```
-[Node.js App]
-     |
-     | (APM Agent)
-     v
-[APM Server]
-     |
-     v
-[Elasticsearch] <--> [Kibana (APM UI)]
-```
-
-⚠️ Node.js **KHÔNG gửi trực tiếp vào Elasticsearch**
-→ phải qua **APM Server**
-
----
-
-## 3. Setup APM Server (Docker – khuyến nghị)
-
-### 3.1. docker-compose mẫu (phổ biến nhất)
-
-```yaml
-version: '3.8'
-
-services:
-  elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
-    container_name: elasticsearch
-    environment:
-      - discovery.type=single-node
-      - xpack.security.enabled=false
-    ports:
-      - "9200:9200"
-
-  kibana:
-    image: docker.elastic.co/kibana/kibana:8.11.0
-    container_name: kibana
-    environment:
-      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
-    ports:
-      - "5601:5601"
-    depends_on:
-      - elasticsearch
-
-  apm-server:
-    image: docker.elastic.co/apm/apm-server:8.11.0
-    container_name: apm-server
-    command: >
-      apm-server -e
-        -E apm-server.host=0.0.0.0:8200
-        -E output.elasticsearch.hosts=["http://elasticsearch:9200"]
-    ports:
-      - "8200:8200"
-    depends_on:
-      - elasticsearch
-```
-
-Chạy:
+### 1. Clone và cài đặt dependencies
 
 ```bash
+# Cài đặt Node.js dependencies
+npm install
+```
+
+### 2. Cấu hình environment variables
+
+```bash
+# Copy file .env.example
+cp .env.example .env
+
+# Chỉnh sửa file .env nếu cần
+```
+
+### 3. Khởi động Elastic Stack
+
+```bash
+# Khởi động Elasticsearch, Kibana, và APM Server
 docker-compose up -d
+
+# Kiểm tra trạng thái services
+docker-compose ps
 ```
 
----
+**⏱️ Chờ đợi**: Elastic Stack cần khoảng 2-3 phút để khởi động hoàn toàn.
 
-### 3.2. Kiểm tra APM Server sống chưa
+### 4. Verify Elastic Stack
+
+Kiểm tra các services đã sẵn sàng:
 
 ```bash
+# Elasticsearch
+curl http://localhost:9200
+
+# APM Server  
 curl http://localhost:8200
+
+# Kibana (mở browser)
+# http://localhost:5601
 ```
 
-Nếu thấy JSON info → OK
+## 🏃 Chạy ứng dụng
 
----
-
-## 4. Setup Elastic APM cho Node.js
-
----
-
-### 4.1. Cài thư viện
-
+### Bước 1: Kiểm tra Elastic Stack
 ```bash
-npm install elastic-apm-node
+# Kiểm tra xem các services đã sẵn sàng chưa
+npm run check-apm
 ```
 
-hoặc
+### Bước 2: Chạy ứng dụng
 
+**Development mode:**
 ```bash
-yarn add elastic-apm-node
+npm run dev
 ```
 
----
-
-### 4.2. Cách **BẮT BUỘC ĐÚNG** khi khởi tạo APM
-
-⚠️ **APM phải được require/import đầu tiên**, trước Express, DB, Redis
-
-#### Cách 1 – File riêng (khuyến nghị)
-
-##### `apm.js`
-
-```js
-const apm = require('elastic-apm-node').start({
-  serviceName: 'location-service',
-  serverUrl: 'http://localhost:8200',
-  environment: 'development',
-  transactionSampleRate: 1.0, // 100% request
-});
-
-module.exports = apm;
-```
-
-##### `index.js`
-
-```js
-require('./apm'); // PHẢI đặt trên cùng
-
-const express = require('express');
-const app = express();
-
-app.get('/ping', (req, res) => {
-  res.json({ message: 'pong' });
-});
-
-app.listen(3000);
-```
-
----
-
-#### Cách 2 – Dùng biến môi trường (production chuẩn)
-
+**Production mode:**
 ```bash
-export ELASTIC_APM_SERVICE_NAME=location-service
-export ELASTIC_APM_SERVER_URL=http://apm-server:8200
-export ELASTIC_APM_ENVIRONMENT=production
-export ELASTIC_APM_TRANSACTION_SAMPLE_RATE=0.2
+npm start
 ```
 
-```js
-require('elastic-apm-node').start();
+**Load testing:**
+```bash
+npm run test-load
 ```
 
----
+Ứng dụng sẽ chạy tại: http://localhost:3000
 
-## 5. Kiểm tra dữ liệu trong Kibana
+> **💡 Lưu ý**: Ứng dụng sẽ chạy bình thường ngay cả khi APM Server chưa sẵn sàng, chỉ là không có monitoring data.
 
-1. Truy cập:
-   👉 `http://localhost:5601`
-2. Menu → **Observability → APM**
-3. Gọi API Node.js vài lần
-4. Thấy service xuất hiện
+## 📡 API Endpoints
 
----
-
-## 6. Ví dụ APM hoạt động như thế nào?
-
----
-
-### 6.1. Auto instrument (KHÔNG cần code)
-
-APM tự bắt:
-
-* HTTP request
-* Express middleware
-* MongoDB / MySQL / PostgreSQL
-* Redis
-* Axios / fetch / request
-
-Ví dụ:
-
-```js
-await axios.get('https://api.external.com/data');
+### 1. Health Check
+```bash
+GET /health
 ```
 
-→ tự hiện trong APM trace
-
----
-
-### 6.2. Custom Transaction (nâng cao)
-
-Dùng khi:
-
-* Background job
-* Cron
-* Consumer Kafka
-* Queue worker
-
-```js
-const apm = require('./apm');
-
-async function processJob() {
-  const transaction = apm.startTransaction('sync_location', 'job');
-
-  try {
-    await heavyTask();
-  } catch (err) {
-    apm.captureError(err);
-    throw err;
-  } finally {
-    transaction.end();
-  }
-}
+### 2. Home
+```bash
+GET /
 ```
 
----
-
-### 6.3. Custom Span (bóc tách API chậm)
-
-```js
-app.get('/verify', async (req, res) => {
-  const span = apm.startSpan('verify_latlng_logic');
-
-  await verifyLatLng();
-
-  span.end();
-  res.send('OK');
-});
+### 3. Users List (với DB simulation)
+```bash
+GET /api/users
 ```
 
-Trong Kibana bạn sẽ thấy:
-
-```
-HTTP request
- └── verify_latlng_logic (span)
+### 4. Random Error (để test error tracking)
+```bash
+GET /api/error
 ```
 
----
-
-## 7. Bắt lỗi (Error Tracking)
-
-### 7.1. Bắt lỗi tự động
-
-```js
-throw new Error('Invalid lat lng');
+### 5. Slow Operation (để test performance)
+```bash
+GET /api/slow?delay=3000
 ```
 
-→ xuất hiện ở tab **Errors**
+### 6. Custom Metrics
+```bash
+GET /api/metrics
+```
 
----
+## 📊 Giám sát với Kibana
 
-### 7.2. Bắt lỗi thủ công
+### 1. Truy cập Kibana
+Mở browser và truy cập: http://localhost:5601
 
-```js
+### 2. Setup APM
+1. Vào **Observability** → **APM**
+2. Chờ một vài phút để dữ liệu xuất hiện
+3. Bạn sẽ thấy service `nodejs-apm-example`
+
+### 3. Tạo traffic để test
+```bash
+# Chạy một vài requests để tạo dữ liệu
+curl http://localhost:3000/
+curl http://localhost:3000/api/users
+curl http://localhost:3000/api/slow?delay=2000
+curl http://localhost:3000/api/error
+curl http://localhost:3000/api/metrics
+```
+
+### 4. Explore APM Data
+Trong Kibana APM, bạn có thể xem:
+- **Services**: Danh sách các services
+- **Traces**: Chi tiết từng request
+- **Dependencies**: Service map
+- **Errors**: Error tracking và stack traces
+- **Metrics**: Performance metrics
+
+## 🔧 Tính năng APM
+
+### Custom Spans
+```javascript
+const span = apm.startSpan('my-operation');
 try {
-  risky();
-} catch (e) {
-  apm.captureError(e, {
-    custom: {
-      input: payload,
-      userId: 123
-    }
-  });
+  // Your code here
+} finally {
+  if (span) span.end();
 }
 ```
 
----
-
-## 8. Performance tuning (RẤT QUAN TRỌNG)
-
-### 8.1. Giảm sample rate (production)
-
-```env
-ELASTIC_APM_TRANSACTION_SAMPLE_RATE=0.1
+### Error Tracking
+```javascript
+try {
+  // Code that might throw
+} catch (error) {
+  apm.captureError(error);
+  throw error;
+}
 ```
 
-= 10% request
+### Custom Labels/Tags
+```javascript
+apm.setLabel('user_id', 12345);
+apm.setLabel('feature_flag', 'enabled');
+```
 
----
+### Transaction Name
+```javascript
+apm.setTransactionName('custom-transaction-name');
+```
 
-### 8.2. Ignore healthcheck
+## 📁 Cấu trúc Project
 
-```js
-require('elastic-apm-node').start({
-  ignoreUrls: ['/health', '/ping'],
+```
+116_APM_nodejs/
+├── app.js                 # Main application
+├── package.json          # Dependencies
+├── docker-compose.yml    # Elastic Stack setup
+├── .env.example         # Environment variables template
+└── README.md           # Tài liệu này
+```
+
+## 🛠️ Troubleshooting
+
+### Lỗi khi khởi động ứng dụng
+
+**Lỗi: "Cannot read properties of undefined (reading 'serverUrl')"**
+- **Nguyên nhân**: APM Server chưa sẵn sàng
+- **Giải pháp**: Chạy `npm run check-apm` để kiểm tra services
+
+**Lỗi: "APM Server transport error (503)"**
+- **Nguyên nhân**: APM Server chưa hoàn toàn khởi động
+- **Giải pháp**: Chờ thêm 2-3 phút và thử lại
+
+### Kiểm tra Services
+```bash
+# Kiểm tra tất cả services
+npm run check-apm
+
+# Kiểm tra Docker containers
+docker-compose ps
+
+# Xem logs của từng service
+docker-compose logs elasticsearch
+docker-compose logs apm-server
+docker-compose logs kibana
+```
+
+### APM Server không kết nối được
+```bash
+# Kiểm tra APM Server
+curl http://localhost:8200
+
+# Restart APM Server nếu cần
+docker-compose restart apm-server
+```
+
+### Elasticsearch không đủ memory
+```bash
+# Tăng memory limit trong docker-compose.yml
+# Thay đổi ES_JAVA_OPTS từ -Xms1g -Xmx1g thành -Xms2g -Xmx2g
+```
+
+### Kibana load chậm
+```bash
+# Chờ Elasticsearch sẵn sàng
+curl "http://localhost:9200/_cluster/health?wait_for_status=green&timeout=60s"
+```
+
+### Ports bị chiếm dụng
+Nếu ports 9200, 5601, hoặc 8200 đã được sử dụng:
+```bash
+# Kiểm tra process sử dụng port
+netstat -ano | findstr :9200
+netstat -ano | findstr :5601  
+netstat -ano | findstr :8200
+
+# Hoặc thay đổi ports trong docker-compose.yml
+```
+
+## 🔄 Development Tips
+
+### 1. Hot Reload
+Sử dụng `nodemon` để auto-restart khi code thay đổi:
+```bash
+npm run dev
+```
+
+### 2. Debug APM
+Bật debug mode trong APM:
+```javascript
+const apm = require('elastic-apm-node').start({
+  logLevel: 'debug'
 });
 ```
 
----
-
-### 8.3. Disable APM theo môi trường
-
-```js
-require('elastic-apm-node').start({
-  active: process.env.NODE_ENV === 'production'
+### 3. Disable APM trong Testing
+```javascript
+const apm = require('elastic-apm-node').start({
+  active: process.env.NODE_ENV !== 'test'
 });
 ```
 
----
+## 🧹 Cleanup
 
-## 9. Các lỗi thường gặp
+Để dọn dẹp resources:
+```bash
+# Stop containers
+docker-compose down
 
-### ❌ Không thấy data
+# Remove volumes (sẽ xóa hết dữ liệu)
+docker-compose down -v
 
-Nguyên nhân phổ biến:
+# Remove images
+docker-compose down --rmi all
+```
 
-* APM require sau Express
-* Sai `serverUrl`
-* Container Node không connect được APM Server
-* `transactionSampleRate = 0`
+## 📚 Tài liệu tham khảo
 
----
-
-### ❌ p95 cao dù return sớm
-
-Nguyên nhân:
-
-* Event loop block
-* Await promise treo
-* GC / CPU spike
-* Span bên dưới còn chạy
-
-👉 APM trace sẽ chỉ chính xác **đang chậm ở span nào**
+- [Elastic APM Node.js Agent](https://www.elastic.co/guide/en/apm/agent/nodejs/current/index.html)
+- [APM Server](https://www.elastic.co/guide/en/apm/server/current/index.html)
+- [Kibana APM UI](https://www.elastic.co/guide/en/kibana/current/apm-getting-started.html)
 
 ---
 
-## 10. Khi nào nên dùng APM?
-
-✅ NÊN:
-
-* API latency cao
-* Debug p95/p99
-* Microservice
-* Queue / Kafka / Worker
-
-❌ KHÔNG NÊN:
-
-* App nhỏ, traffic thấp
-* Không cần trace
-
----
-
-## 11. Tính năng mở rộng
-
-Nếu bạn muốn, có thể tham khảo thêm:
-
-* So sánh **APM vs log thường**
-* Hướng dẫn **APM cho NestJS**
-* Debug **case p95 cao dù return ngay**
-* Tối ưu **APM cho Kafka / Queue / Cron**
-
-Chỉ cần biết bạn đang dùng **Express / NestJS / Fastify** và chạy **local hay Kubernetes**.
+💡 **Lưu ý**: Cấu hình này chỉ dành cho development. Trong production, hãy bật security cho Elasticsearch và sử dụng proper authentication.
