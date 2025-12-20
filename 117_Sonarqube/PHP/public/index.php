@@ -34,6 +34,19 @@ try {
                 http_response_code(404);
                 echo json_encode(['error' => 'User not found']);
             }
+        } elseif ($uri === '/api/search' && isset($_GET['q'])) {
+            // VULNERABLE ENDPOINT: SQL injection risk
+            $searchTerm = $_GET['q'];
+            
+            // CRITICAL: Direct SQL injection vulnerability
+            $pdo = new PDO('sqlite::memory:');  
+            $sql = "SELECT * FROM users WHERE name LIKE '%$searchTerm%' OR email LIKE '%$searchTerm%'";
+            
+            // SonarQube SẼ phát hiện SQL injection tại đây
+            $stmt = $pdo->query($sql);
+            $results = $stmt ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
+            
+            echo json_encode($results);
         } else {
             http_response_code(404);
             echo json_encode(['error' => 'Endpoint not found']);

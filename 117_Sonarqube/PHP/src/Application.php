@@ -146,11 +146,17 @@ class Application
      */
     public function searchUsers($query)
     {
-        // Code smell: SQL injection vulnerability (simulation)
+        // VULNERABILITY: SQL injection - SonarQube sẽ phát hiện
         $sql = "SELECT * FROM users WHERE name LIKE '%$query%'";
+        
+        // Simulate database execution - SonarQube cần thấy database call
+        // Uncomment dòng dưới để SonarQube phát hiện SQL injection:
+        // $result = mysqli_query($connection, $sql);
+        // $result = $pdo->query($sql);
+        
         error_log('Executing query: ' . $sql);
         
-        // In real scenario, this would execute actual SQL
+        // Manual search for demo purposes
         $results = [];
         foreach ($this->users as $user) {
             if (strpos(strtolower($user->getName()), strtolower($query)) !== false) {
@@ -159,6 +165,23 @@ class Application
         }
         
         return $results;
+    }
+
+    /**
+     * VULNERABLE: Real SQL injection example - SonarQube sẽ phát hiện
+     * @param string $query
+     * @return array
+     */
+    public function searchUsersVulnerable($query)
+    {
+        // Giả lập có database connection
+        $pdo = new PDO('sqlite::memory:');
+        
+        // CRITICAL: SQL Injection vulnerability - SonarQube SẼ phát hiện
+        $sql = "SELECT * FROM users WHERE name LIKE '%$query%'";
+        $result = $pdo->query($sql); // <-- SonarQube phát hiện tại đây
+        
+        return $result ? $result->fetchAll() : [];
     }
 
     /**

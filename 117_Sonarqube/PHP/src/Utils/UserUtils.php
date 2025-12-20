@@ -158,9 +158,49 @@ class DatabaseUtils
      */
     public static function getUserById($userId)
     {
-        // Security vulnerability: direct parameter injection
+        // CRITICAL: SQL Injection - SonarQube SẼ phát hiện
+        $pdo = new PDO('sqlite::memory:');
         $sql = "SELECT * FROM users WHERE id = $userId";
-        return self::executeQuery($sql);
+        
+        // Đây là nơi SonarQube sẽ phát hiện SQL injection
+        $result = $pdo->query($sql);
+        
+        return $result ? $result->fetchAll() : [];
+    }
+
+    /**
+     * Another SQL injection example using mysqli
+     * @param string $email
+     * @return array
+     */
+    public static function getUserByEmail($email)
+    {
+        // CRITICAL: SQL Injection với mysqli
+        $connection = mysqli_connect('localhost', 'user', 'pass', 'db');
+        $sql = "SELECT * FROM users WHERE email = '$email'";
+        
+        // SonarQube sẽ phát hiện SQL injection tại đây
+        $result = mysqli_query($connection, $sql);
+        
+        return mysqli_fetch_all($result, MYSQLI_ASSOC);
+    }
+
+    /**
+     * Dynamic table query - also vulnerable
+     * @param string $table
+     * @param string $condition
+     * @return array  
+     */
+    public static function queryTable($table, $condition)
+    {
+        // CRITICAL: Table name injection + WHERE injection
+        $pdo = new PDO('sqlite::memory:');
+        $sql = "SELECT * FROM $table WHERE $condition";
+        
+        // Multiple injection points - SonarQube sẽ phát hiện
+        $stmt = $pdo->query($sql);
+        
+        return $stmt ? $stmt->fetchAll() : [];
     }
 }
 

@@ -22,7 +22,10 @@
   },
   "autoload": {
     "psr-4": {
-      "App\\": "src/"
+      "App\\": "src/",
+      "App\\Database\\": "src/Database/",
+      "App\\Models\\": "src/Models/",
+      "App\\Utils\\": "src/Utils/"
     }
   },
   "autoload-dev": {
