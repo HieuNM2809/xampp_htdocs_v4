@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node src/app.js",
     "test": "jest",
-    "sonar": "npx sonarqube-scanner"
+    "sonar": "sonar-scanner"
   },
   "keywords": ["nodejs", "sonarqube", "code-quality"],
   "author": "Demo",
