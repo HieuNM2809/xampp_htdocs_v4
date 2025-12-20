@@ -17,13 +17,12 @@ echo Running SonarQube Scanner via Docker...
 echo Using configuration from sonar-project.properties
 
 echo Mounting current directory and running scan...
-  docker run --rm ^
-    -v "%cd%":/usr/src ^
-    -w /usr/src ^
-    sonarsource/sonar-scanner-cli:latest ^
-    sonar-scanner ^
-    -Dsonar.host.url=http://host.docker.internal:9000 ^
-    -Dsonar.token=squ_d7b67816e257b0ce40d69777b08a94531b68fccd
+docker run --rm ^
+  -v "%cd%":/usr/src ^
+  -w /usr/src ^
+  sonarsource/sonar-scanner-cli:latest ^
+  sonar-scanner ^
+  -Dsonar.host.url=http://host.docker.internal:9000
 
 echo Scan completed! Check results at: http://localhost:9000
 pause
