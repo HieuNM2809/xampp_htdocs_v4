@@ -1,0 +1,22 @@
+{
+  "name": "nodejs-sonarqube-demo",
+  "version": "1.0.0",
+  "description": "Demo Node.js project for SonarQube scanning",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "test": "jest",
+    "sonar": "npx sonarqube-scanner"
+  },
+  "keywords": ["nodejs", "sonarqube", "code-quality"],
+  "author": "Demo",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "lodash": "^4.17.21"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "sonarqube-scanner": "^3.3.0"
+  }
+}
